@@ -4,7 +4,7 @@ from functools import partial
 
 from Levenshtein import distance as lev
 import numpy as np
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.bleu_score import corpus_bleu
 from nltk.translate.meteor_score import meteor_score
 from rouge_score import rouge_scorer
 from rdkit import Chem, DataStructs, RDLogger
@@ -62,7 +62,7 @@ class MoleculeSMILESEvaluator(Evaluator):
     _metric_functions = {
         "levenshtein": lev,
         "exact_match": exact_match,
-        "bleu": sentence_bleu,
+        "bleu": corpus_bleu,
         "validity": lambda smiles: smiles is not None,
         "maccs_sims": maccs_similarity,
         "morgan_sims": morgan_similarity,
@@ -107,6 +107,8 @@ class MoleculeSMILESEvaluator(Evaluator):
                 if pred is None or gt is None:
                     results[metric].append(0)
                     continue
+                if metric == "bleu":
+                    results[metric].append(self._metric_functions[metric]([[gt]], [pred]))
                 elif metric == "validity":
                     results[metric].append(self._metric_functions[metric](pred))
                 elif metric in ["maccs_sims", "morgan_sims", "rdk_sims"]:
@@ -124,8 +126,8 @@ class MoleculeSMILESEvaluator(Evaluator):
 
 class MoleculeCaptionEvaluator(Evaluator):
     _metric_functions = {
-        "bleu-2": partial(sentence_bleu, weights=(0.5, 0.5)),
-        "bleu-4": partial(sentence_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
+        "bleu-2": partial(corpus_bleu, weights=(0.5, 0.5)),
+        "bleu-4": partial(corpus_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
         "rouge-1": rouge_scorer.RougeScorer(['rouge1']).score,
         "rouge-2": rouge_scorer.RougeScorer(['rouge2']).score,
         "rouge-l": rouge_scorer.RougeScorer(['rougeL']).score,
