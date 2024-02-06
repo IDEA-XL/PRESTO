@@ -1,4 +1,0 @@
-IGNORE_INDEX = -100
-
-ROLE_ASSISTANT = "assistant"
-ROLE_USER = "user"
