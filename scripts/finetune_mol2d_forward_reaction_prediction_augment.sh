@@ -25,7 +25,7 @@ deepspeed --master_port=25678 train_model.py \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 8 \
-    --model_max_length 4096 \
+    --model_max_length 8192 \ 
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 250 \

@@ -7,6 +7,7 @@ from datasets import load_from_disk, load_dataset, Dataset as HFDataset
 import transformers
 import torch
 import tqdm
+
 from bioagent.training import ModelArguments
 from bioagent.inference import load_trained_lora_model
 from bioagent.data_tools import encode_chat, parse_chat_output
@@ -77,10 +78,13 @@ def _evaluate(model, tokenizer, dataset, args):
         generated_output = tokenizer.decode(
             output_ids[0, encoded_dict["input_ids"].shape[0]:],
             skip_special_tokens=True,
-        ).strip()
+        ).strip() 
 
         if args.parser:
-            generated_output = parse_chat_output(generated_output, args.parser)["output"]
+            try:
+                generated_output = parse_chat_output(generated_output, args.parser)["output"]
+            except:
+                pass
 
         if args.verbose:
             print(f"Ground Truth: {ground_truth}")

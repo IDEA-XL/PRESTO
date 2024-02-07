@@ -79,7 +79,7 @@ class MoleculeSMILESEvaluator(Evaluator):
 
     @staticmethod
     def convert_to_canonical_smiles(smiles):
-        if smiles is None:
+        if not smiles:
             return None
         molecule = Chem.MolFromSmiles(smiles)
         if molecule is not None:

@@ -22,7 +22,7 @@ deepspeed --master_port=25674 train_model.py \
     --tf32 True \
     --num_train_epochs 10 \
     --gradient_checkpointing True \
-    --per_device_train_batch_size 8 \
+    --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 4 \
     --model_max_length 4096 \

@@ -1,7 +1,6 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
-import numpy as np
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 import selfies as sf
 import torch
@@ -10,7 +9,7 @@ import torch.nn.functional as F
 from torch.utils._pytree import tree_map
 from torch_geometric.nn import (MessagePassing, global_mean_pool)
 
-from bioagent.chemistry_tools.smiles import smiles2graph
+from bioagent.chemistry_tools import smiles_to_graph
 from bioagent.modalities.base_modality import Modality
 from bioagent.modalities.projectors import build_mlp_vector_projector
 
@@ -92,20 +91,35 @@ class Molecule2DModality(Modality):
                 smiles = [sf.decoder(selfie) for selfie in selfies]
             if not isinstance(smiles, list):
                 smiles = [smiles]
-            row_values.append(tree_map(smiles2graph, smiles))
+            row_values.append(tree_map(smiles_to_graph, smiles))
         return row_values
 
     @torch.no_grad()
-    def forward(self, encoded_values: List[Dict]) -> List[torch.Tensor]:
-        mol_features = []
-        for encoded_value in encoded_values:
-            mol_feature = []
-            for mol in encoded_value:
-                mol_feature.append(self.module(
-                    **tree_map(lambda x: x.to(self.device), mol)
-                ))
-            mol_features.append(torch.stack(mol_feature).to(self.dtype) if len(mol_feature) > 0 else None)
-        return mol_features
+    def forward(self, *argv) -> List[torch.Tensor] | torch.Tensor:
+        # mol_features = []
+        # for encoded_value in encoded_values:
+        #     mol_feature = []
+        #     for mol in encoded_value:
+        #         mol_feature.append(self.module(
+        #             *tree_map(lambda x: x.to(self.device), mol)
+        #         ))
+        #     mol_features.append(torch.stack(mol_feature).to(self.dtype) if len(mol_feature) > 0 else None)
+        # return mol_features
+        if len(argv) > 1:
+            return self.module(*tree_map(lambda x: x.to(self.device), argv)).to(self.dtype)
+        argv = argv[0]
+        if isinstance(argv[0], tuple):
+            batch = argv
+            return torch.stack([self.module(*tree_map(lambda x: x.to(self.device), item)) for item in batch]).to(self.dtype) if len(batch) > 0 else None
+        features = []
+        for batch in argv:
+            if len(batch) == 0:
+                features.append(None)
+            else:
+                assert len(batch[0]) == 3, "The input should be a tuple of (x, edge_index, edge_attr)"
+                features.append(torch.stack([self.module(*tree_map(lambda x: x.to(self.device), item)) for item in batch]).to(self.dtype))
+        return features
+        
 
 
 class GINConv(MessagePassing):

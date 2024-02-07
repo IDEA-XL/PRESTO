@@ -12,11 +12,11 @@ from bioagent.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
 MOLECULE_TOKEN = "<molecule_2d>"
 
 SYSTEM_PROMPT = """You are a chemist. Now you are given a reaction equation. Please predict the product of the reaction.
-The reaction equation has the following format (<REPRESENTATION> is extracted from a strong molecule encoder):
+The reaction equation has the following format. We also have a special representation of a molecule. It is extracted from a strong molecule encoder.
 ```
-reactant1<REPRESENTATION>.reactant2<REPRESENTATION>. ... .reactantN<REPRESENTATION>>product
+reactant1.reactant2. ... .reactantN>>product
 ```
-Your task is to predict the SELFIES representation of the product molecule."""
+Your task is to predict the SELFIES representation of the product molecule. We provide the SELFIES and molecule representation of the reactants."""
 
 FEW_SHOT_PROMPT = """Here are some examples of reaction equations."""
 
@@ -24,11 +24,19 @@ FEW_SHOT_TEMPLATE = """Instruction: {instruction}
 
 Input: {input}
 
-Output: {output}"""
+Molecule representation of the reactants: {molecules_input}
+
+Output: {output}
+
+Molecule representation of the product: {molecules_output}
+"""
 
 PROMPT_TEMPLATE = """Instruction: {instruction}
 
-Input: {input}"""
+Input: {input}
+
+Molecule representation of the reactants: {molecules}
+"""
 
 OUTPUT_TEMPLATE = """Output: {output}"""
 
@@ -44,13 +52,13 @@ def load_dataset(reaction_data_path):
 
 def process_reaction_equation(reaction):
     selfies = multicomponent_smiles_to_list(reaction)
-    input = list_to_multicomponent_smiles((sf + f"<{MOLECULE_TOKEN}>" for sf in selfies))
     smiles = [sf.decoder(selfie) for selfie in selfies]
-    return input, selfies, smiles
+    molecules = ".".join([MOLECULE_TOKEN for _ in range(len(smiles))])
+    return selfies, smiles, molecules
 
 
 def conversation_train(id, instruction, input, output):
-    input, selfies, smiles = process_reaction_equation(input)
+    selfies, smiles, molecules = process_reaction_equation(input)
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
@@ -62,7 +70,7 @@ def conversation_train(id, instruction, input, output):
             },
             {
                 "role": ROLE_USER,
-                "content": PROMPT_TEMPLATE.format(instruction=instruction, input=input)
+                "content": PROMPT_TEMPLATE.format(instruction=instruction, input=input, molecules=molecules)
             },
             {
                 "role": ROLE_ASSISTANT,
@@ -75,31 +83,35 @@ def conversation_train(id, instruction, input, output):
 def conversation_test(id, instruction, input, output, few_shots: list):
     selfies, smiles = [], []
     for i, row in enumerate(few_shots):
-        input_, selfies_, smiles_ = process_reaction_equation(row["input"])
+        selfies_, smiles_, molecules_input = process_reaction_equation(row["input"])
         selfies.extend(selfies_)
         smiles.extend(smiles_)
-        output_, selfies_, smiles_ = process_reaction_equation(row["output"])
+        selfies_, smiles_, molecules_output = process_reaction_equation(row["output"])
         selfies.extend(selfies_)
         smiles.extend(smiles_)
         few_shots[i] = {
-            "input": input_,
-            "output": output_
+            "input": row["input"],
+            "output": row["output"],
+            "molecules_input": molecules_input,
+            "molecules_output": molecules_output
         }
         
-    input, selfies_, smiles_ = process_reaction_equation(input)
+    selfies_, smiles_, molecules = process_reaction_equation(input)
     selfies.extend(selfies_)
     smiles.extend(smiles_)
 
     if not few_shots:
-        content = PROMPT_TEMPLATE.format(instruction=instruction, input=input)
+        content = PROMPT_TEMPLATE.format(instruction=instruction, input=input, molecules=molecules)
     else:
         content = FEW_SHOT_PROMPT + "\n" + "\n".join(
             FEW_SHOT_TEMPLATE.format(
                 instruction=instruction,
                 input=item["input"],
-                output=item["output"]
+                output=item["output"],
+                molecules_input=item["molecules_input"],
+                molecules_output=item["molecules_output"]
             ) for item in few_shots
-        ) + "\n" + PROMPT_TEMPLATE.format(instruction=instruction, input=input)
+        ) + "\n" + PROMPT_TEMPLATE.format(instruction=instruction, input=input, molecules=molecules)
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
@@ -142,7 +154,7 @@ def main(args):
                     item['instruction'],
                     item['input'],
                     item['output'],
-                    generate_few_shot_examples(rows, num_examples=3)
+                    generate_few_shot_examples(rows, num_examples=0)
                 )
 
     # train test split based on item['metadata']['split']
@@ -162,4 +174,4 @@ if __name__ == "__main__":
     main(args)
 
 
-# python molecule_build_forward_reaction_prediction_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction_few_shot
+# python molecule_build_forward_reaction_prediction_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction

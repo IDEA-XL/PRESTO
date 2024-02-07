@@ -1,6 +1,7 @@
 import json
 import os
 import argparse
+import random
 
 from datasets import Dataset
 import selfies as sf
@@ -10,19 +11,26 @@ from bioagent.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
 
 MOLECULE_TOKEN = "<molecule_2d>"
 
-SYSTEM_PROMPT = """You are a chemist. Now you are given a reaction equation. Please predict the product of the reaction.
+SYSTEM_PROMPT = """You are a chemist. Now you are given a product molecule and you need to predict the SELFIES representation of the reactant molecule.
 The reaction equation has the following format (<REPRESENTATION> is extracted from a strong molecule encoder):
 ```
-reactant1<REPRESENTATION>.reactant2<REPRESENTATION>. ... .reactantN<REPRESENTATION>>product
+reactant1.reactant2. ... .reactantN>>product<REPRESENTATION>
 ```
-Your task is to predict the SELFIES representation of the product molecule."""
+Your task is to predict the SELFIES representation of all the reactant molecule. If there are multiple reactant molecules, separate them with a period."""
+
+FEW_SHOT_PROMPT = """Here are some examples of reaction equations."""
+
+FEW_SHOT_TEMPLATE = """Instruction: {instruction}
+
+Input: {input}
+
+Output: {output}"""
 
 PROMPT_TEMPLATE = """Instruction: {instruction}
 
 Input: {input}"""
 
-OUTPUT_TEMPLATE = """Output:
-{output}"""
+OUTPUT_TEMPLATE = """Output: {output}"""
 
 
 def load_dataset(reaction_data_path):
@@ -33,14 +41,17 @@ def load_dataset(reaction_data_path):
     
     return rows
 
-def reaction_equation_to_conversation(id, instruction, input, output=None, split="train"):
-    """
-    Convert a reaction equation to a list of messages.
-    """
-    selfies = multicomponent_smiles_to_list(input)
+
+def process_reaction_equation(reaction):
+    selfies = multicomponent_smiles_to_list(reaction)
     input = list_to_multicomponent_smiles((sf + f"<{MOLECULE_TOKEN}>" for sf in selfies))
     smiles = [sf.decoder(selfie) for selfie in selfies]
-    ret = {
+    return input, selfies, smiles
+
+
+def conversation_train(id, instruction, input, output):
+    input, selfies, smiles = process_reaction_equation(input)
+    return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
         "ground_truth": output,
@@ -53,16 +64,61 @@ def reaction_equation_to_conversation(id, instruction, input, output=None, split
                 "role": ROLE_USER,
                 "content": PROMPT_TEMPLATE.format(instruction=instruction, input=input)
             },
-        ],
-    }
-    if split == "train":
-        ret["messages"].append(
             {
                 "role": ROLE_ASSISTANT,
                 "content": OUTPUT_TEMPLATE.format(output=output)
             }
-        )
-    return ret
+        ],
+    }
+
+
+def conversation_test(id, instruction, input, output, few_shots: list):
+    selfies, smiles = [], []
+    for i, row in enumerate(few_shots):
+        input_, selfies_, smiles_ = process_reaction_equation(row["input"])
+        selfies.extend(selfies_)
+        smiles.extend(smiles_)
+        output_, selfies_, smiles_ = process_reaction_equation(row["output"])
+        selfies.extend(selfies_)
+        smiles.extend(smiles_)
+        few_shots[i] = {
+            "input": input_,
+            "output": output_
+        }
+        
+    input, selfies_, smiles_ = process_reaction_equation(input)
+    selfies.extend(selfies_)
+    smiles.extend(smiles_)
+
+    if not few_shots:
+        content = PROMPT_TEMPLATE.format(instruction=instruction, input=input)
+    else:
+        content = FEW_SHOT_PROMPT + "\n" + "\n".join(
+            FEW_SHOT_TEMPLATE.format(
+                instruction=instruction,
+                input=item["input"],
+                output=item["output"]
+            ) for item in few_shots
+        ) + "\n" + PROMPT_TEMPLATE.format(instruction=instruction, input=input)
+    return {
+        "id": id,
+        "molecules": {"selfies": selfies, "smiles": smiles},
+        "ground_truth": output,
+        "messages": [
+            {
+                "role": ROLE_SYSTEM,
+                "content": SYSTEM_PROMPT
+            },
+            {
+                "role": ROLE_USER,
+                "content": content
+            }
+        ],
+    }
+
+
+def generate_few_shot_examples(rows, num_examples=5):
+    return random.sample(rows, num_examples)
 
 def main(args):
     rows = load_dataset(args.reaction_data_path)
@@ -73,13 +129,21 @@ def main(args):
             if item['metadata']['split'] != split:
                 continue
 
-            yield reaction_equation_to_conversation(
-                id,
-                item['instruction'],
-                item['input'],
-                item['output'],
-                item['metadata']['split']
-            )
+            if split == "train":
+                yield conversation_train(
+                    id,
+                    item['instruction'],
+                    item['input'],
+                    item['output']
+                )
+            else:
+                yield conversation_test(
+                    id,
+                    item['instruction'],
+                    item['input'],
+                    item['output'],
+                    generate_few_shot_examples(rows, num_examples=0),
+                )
 
     # train test split based on item['metadata']['split']
     for split in ["train", "test"]:
@@ -97,5 +161,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
 
-
-# python molecule_build_forward_reaction_prediction_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction
+# python molecule_build_retrosynthesis_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/retrosynthesis.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/retrosynthesis

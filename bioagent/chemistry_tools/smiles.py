@@ -23,7 +23,7 @@ def _feature_value(feature_dict, feature_method):
     return feature_dict[feature]
 
 
-def atom2feature(atom):
+def atom_to_feature(atom):
     num = atom.GetAtomicNum() - 1
     if num == -1:
         num = 118
@@ -31,18 +31,18 @@ def atom2feature(atom):
     return [num, chiral]
 
 
-def bond2feature(bond):
+def bond_to_feature(bond):
     bond_type = _feature_value(BOND_TYPE, bond.GetBondType)
     bond_dir = _feature_value(BOND_DIR, bond.GetBondDir)
     return [bond_type, bond_dir]
 
 
-def smiles2graph(smiles_string) -> Dict:
+def smiles_to_graph(smiles_string, device="cpu"):
     mol = Chem.MolFromSmiles(smiles_string)
 
     # atoms
-    atom_features_list = [atom2feature(atom) for atom in mol.GetAtoms()]
-    x = torch.tensor(atom_features_list, dtype=torch.int64)
+    atom_features_list = [atom_to_feature(atom) for atom in mol.GetAtoms()]
+    x = torch.tensor(atom_features_list, dtype=torch.int64, device=device)
 
     # bonds
     if len(mol.GetBonds()) > 0:
@@ -50,24 +50,19 @@ def smiles2graph(smiles_string) -> Dict:
         edge_features_list = []
         for bond in mol.GetBonds():
             i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-            edge_feature = bond2feature(bond)
+            edge_feature = bond_to_feature(bond)
             edges_list.extend([(i, j), (j, i)])
             edge_features_list.extend([edge_feature, edge_feature])
 
-        edge_index = torch.tensor(edges_list, dtype=torch.int64).t()
-        edge_attr = torch.tensor(edge_features_list, dtype=torch.int64)
+        edge_index = torch.tensor(edges_list, dtype=torch.int64, device=device).t().contiguous()
+        edge_attr = torch.tensor(edge_features_list, dtype=torch.int64, device=device)
     else:
-        edge_index = torch.zeros((2, 0), dtype=torch.int64)
-        edge_attr = torch.zeros((0, 2), dtype=torch.int64)
+        edge_index = torch.zeros((2, 0), dtype=torch.int64, device=device)
+        edge_attr = torch.zeros((0, 2), dtype=torch.int64, device=device)
 
-    return {
-        'x': x,
-        'edge_index': edge_index,
-        'edge_attr': edge_attr,
-    }
+    return x, edge_index, edge_attr
 
-
-def graph2smiles(x, edge_index, edge_attr):
+def graph_to_smiles(x, edge_index, edge_attr):
     mol = Chem.RWMol()
     for atom_feature in x:
         atom = Chem.Atom(atom_feature[0])
@@ -82,7 +77,7 @@ def graph2smiles(x, edge_index, edge_attr):
     return Chem.MolToSmiles(mol)
 
 
-def smiles2coords(smiles, seed, filter_h_only=True):
+def smiles_to_coords(smiles, filter_h_only=True, max_attempts=1000, random_seed=42):
     mol = Chem.MolFromSmiles(smiles)
     mol = AllChem.AddHs(mol)
     atoms = [atom.GetSymbol() for atom in mol.GetAtoms()]
@@ -90,7 +85,7 @@ def smiles2coords(smiles, seed, filter_h_only=True):
     if filter_h_only and all(atom == 'H' for atom in atoms):
         return None
 
-    res = AllChem.EmbedMolecule(mol, maxAttempts=1000, randomSeed=seed)
+    res = AllChem.EmbedMolecule(mol, maxAttempts=max_attempts, randomSeed=random_seed)
     if res == 0:
         try:
             AllChem.MMFFOptimizeMolecule(mol)
@@ -98,7 +93,7 @@ def smiles2coords(smiles, seed, filter_h_only=True):
             pass
     elif res == -1:
         mol_tmp = Chem.MolFromSmiles(smiles)
-        AllChem.EmbedMolecule(mol_tmp, maxAttempts=1000, randomSeed=seed)
+        AllChem.EmbedMolecule(mol_tmp, maxAttempts=max_attempts, randomSeed=random_seed)
         mol_tmp = AllChem.AddHs(mol_tmp, addCoords=True)
         try:
             AllChem.MMFFOptimizeMolecule(mol_tmp)
@@ -110,7 +105,4 @@ def smiles2coords(smiles, seed, filter_h_only=True):
 
     assert len(atoms) == len(coordinates), f"Coordinates shape is not aligned with {smiles}"
 
-    return {
-        'atoms': atoms,
-        'coordinates': coordinates.tolist()
-    }
+    return atoms, coordinates
