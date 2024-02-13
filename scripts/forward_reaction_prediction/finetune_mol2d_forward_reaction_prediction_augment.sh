@@ -10,7 +10,7 @@ DATA_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molec
 OUTPUT_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-forward-reaction-prediction-augmented"
 PROJECTOR_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain/non_lora_trainables.bin"
 
-deepspeed --master_port=25678 train_model.py \
+deepspeed ../train_model.py \
     --model_name_or_path $MODEL_VERSION \
     --model_cls $MODEL_CLS \
     --modality_builder molecule_2d \
@@ -22,15 +22,15 @@ deepspeed --master_port=25678 train_model.py \
     --tf32 True \
     --num_train_epochs 10 \
     --gradient_checkpointing True \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 2 \
     --model_max_length 8192 \ 
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 250 \
     --save_total_limit 2 \
-    --learning_rate 1e-5 \
+    --learning_rate 8e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

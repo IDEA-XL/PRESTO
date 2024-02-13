@@ -39,12 +39,9 @@ def bond_to_feature(bond):
 
 def smiles_to_graph(smiles_string, device="cpu"):
     mol = Chem.MolFromSmiles(smiles_string)
-
-    # atoms
     atom_features_list = [atom_to_feature(atom) for atom in mol.GetAtoms()]
     x = torch.tensor(atom_features_list, dtype=torch.int64, device=device)
 
-    # bonds
     if len(mol.GetBonds()) > 0:
         edges_list = []
         edge_features_list = []
