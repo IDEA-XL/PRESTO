@@ -66,9 +66,10 @@ def main(args):
     def gen(rows):
         for row in rows:
             for text in row["text"]:
+                q1_row = random.choice(rows)
                 yield {
                     "id": row["cid"],
-                    "molecules": {"smiles": [row["smiles"], row["smiles"]]},
+                    "molecules": {"smiles": [q1_row["smiles"], row["smiles"]]},
                     "messages": [
                         {
                             "role": ROLE_SYSTEM,
@@ -80,7 +81,7 @@ def main(args):
                         },
                         {
                             "role": ROLE_ASSISTANT,
-                            "content": SELFIES_ANSWER_PHRASES.format(selfies=row["selfies"]),
+                            "content": SELFIES_ANSWER_PHRASES.format(selfies=q1_row["selfies"]),
                         },
                         {
                             "role": ROLE_USER,

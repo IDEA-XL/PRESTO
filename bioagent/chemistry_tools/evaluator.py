@@ -99,22 +99,31 @@ class MoleculeSMILESEvaluator(Evaluator):
             metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
 
         results = {metric: [] for metric in metrics}
+        if "bleu" in metrics:
+            results["bleu"] = [[], []]
 
         for pred, gt in zip(predictions, references):
             pred, gt = self.build_evaluate_tuple(pred, gt)
 
             for metric in metrics:
-                if pred is None or gt is None:
+                if metric == "bleu" and pred and gt:
+                    results[metric][0].append([gt])
+                    results[metric][1].append(pred)
+                elif pred is None or gt is None:
                     results[metric].append(0)
                     continue
-                if metric == "bleu":
-                    results[metric].append(self._metric_functions[metric]([[gt]], [pred]))
                 elif metric == "validity":
                     results[metric].append(self._metric_functions[metric](pred))
                 elif metric in ["maccs_sims", "morgan_sims", "rdk_sims"]:
                     results[metric].append(self._metric_functions[metric](Chem.MolFromSmiles(pred), Chem.MolFromSmiles(gt)))
                 else:
                     results[metric].append(self._metric_functions[metric](pred, gt))
+
+        if "bleu" in metrics:
+            if results["bleu"][0] and results["bleu"][1]:
+                results["bleu"] = corpus_bleu(results["bleu"][0], results["bleu"][1])
+            else:
+                results["bleu"] = 0
 
         if verbose:
             print("Evaluation results:")
