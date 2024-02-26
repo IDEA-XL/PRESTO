@@ -20,7 +20,10 @@ class EvaluationArguments(ModelArguments):
         default=None, metadata={"help": "Path to the training data."}
     )
     max_new_tokens: int = field(default=2048, metadata={"help": "Maximum number of new tokens to generate."})
-    temperature: float = field(default=1.0, metadata={"help": "Temperature to use for sampling."})
+    temperature: float = field(default=0.2, metadata={"help": "Temperature to use for sampling."})
+    top_k: int = field(default=50, metadata={"help": "Top k to use for sampling."})
+    top_p: float = field(default=0.8, metadata={"help": "Top p to use for sampling."})
+    do_sample: bool = field(default=True, metadata={"help": "Whether to sample from the output distribution."})
     load_bits: int = field(default=16, metadata={"help": "Quantization bits to use."})
     parser: str = field(default='base', metadata={"help": "Parser for the generated output."})
     evaluator: str = field(default='smiles', metadata={"help": "Evaluator to use for the generated output."})
@@ -68,7 +71,9 @@ def _evaluate(model, tokenizer, dataset, args):
                 input_ids=encoded_dict["input_ids"].unsqueeze(0).to(model.device),
                 max_new_tokens=args.max_new_tokens,
                 use_cache=True,
-                do_sample=True,
+                top_k=args.top_k,
+                top_p=args.top_p,
+                do_sample=args.do_sample,
                 temperature=args.temperature,
                 modality_inputs={
                     m.name: [encoded_dict[m.name]] for m in model.modalities

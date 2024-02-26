@@ -32,7 +32,7 @@ class Molecule2DModality(Modality):
     def __init__(
         self,
         model_name_or_path: str = os.path.join(MOLECULE_2D_PATH, "molecule_model.pth"),
-        num_projector_layers: int = 2,
+        num_projector_layers: int = 1,
         num_tokens_output: int = 1,
     ):
         self.model_name_or_path = model_name_or_path

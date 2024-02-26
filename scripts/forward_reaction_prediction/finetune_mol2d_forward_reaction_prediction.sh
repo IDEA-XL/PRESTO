@@ -37,4 +37,4 @@ deepspeed ../train_model.py \
     --dataloader_num_workers 2 \
     --logging_steps 1 \
     --report_to wandb \
-    --deepspeed ../configs/zero2.json
+    --deepspeed ../../configs/zero2.json
