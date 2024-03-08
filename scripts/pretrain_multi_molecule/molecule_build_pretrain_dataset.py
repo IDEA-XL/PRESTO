@@ -14,15 +14,15 @@ MOLECULE_TOKEN = "<molecule_2d>"
 SYSTEM_PROMPT = """You are a chemist. Now you are given a representation of a molecule. Please help me to understand the molecule.
 The molecule representation <REPRESENTATION> is extracted from a strong molecule encoder."""
 
-PRETRAIN_PHRASES = [
-    f'Could you give me a brief overview of {MOLECULE_TOKEN}?',
-    f'Could you provide a description of {MOLECULE_TOKEN}?',
-    f'Describe {MOLECULE_TOKEN}.',
-    f'Please give me some details about {MOLECULE_TOKEN}.',
-    f'Provide a brief overview of {MOLECULE_TOKEN}.',
-    f'Provide a description of {MOLECULE_TOKEN}.',
-    f'What can you tell me about {MOLECULE_TOKEN}?',
+SELFIES_PHRASES = [
+    f"Could you give me the SELFIES representation of {MOLECULE_TOKEN}?",
+    f"What is the SELFIES representation of {MOLECULE_TOKEN}?",
+    f"Please provide the SELFIES representation of {MOLECULE_TOKEN}.",
+    f"Give me the SELFIES representation of {MOLECULE_TOKEN}.",
+    f"SELFIES representation of {MOLECULE_TOKEN}?",
 ]
+
+SELFIES_ANSWER_PHRASES = "The SELFIES is {selfies}."
 
 
 def load_dataset(qa_path):
@@ -55,25 +55,27 @@ def main(args):
 
     def gen(rows):
         for row in rows:
-            for text in row["text"]:
-                yield {
-                    "id": row["cid"],
-                    "molecules": {"smiles": [row["smiles"]]},
-                    "messages": [
-                        {
-                            "role": ROLE_SYSTEM,
-                            "content": SYSTEM_PROMPT
-                        },
-                        {
-                            "role": ROLE_USER,
-                            "content": random.choice(PRETRAIN_PHRASES),
-                        },
-                        {
-                            "role": ROLE_ASSISTANT,
-                            "content": text,
-                        }
-                    ]
-                }
+            qrows = random.sample(rows, args.num_choices - 1) + [row]
+            ret = {
+                "id": row["cid"],
+                "molecules": {"smiles": [qrow["smiles"] for qrow in qrows]},
+                "messages": [
+                    {
+                        "role": ROLE_SYSTEM,
+                        "content": SYSTEM_PROMPT
+                    },
+                ]
+            }
+            for qrow in qrows:
+                ret["messages"].append({
+                    "role": ROLE_USER,
+                    "content": random.choice(SELFIES_PHRASES)
+                })
+                ret["messages"].append({
+                    "role": ROLE_ASSISTANT,
+                    "content": SELFIES_ANSWER_PHRASES.format(selfies=qrow["selfies"])
+                })
+            yield ret
 
     dataset = Dataset.from_generator(gen, gen_kwargs={"rows": rows}, num_proc=args.num_proc)
     dataset.save_to_disk(args.out_dir)
@@ -84,7 +86,8 @@ if __name__ == "__main__":
     parser.add_argument("--qa_path", type=str, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
     parser.add_argument("--num_proc", type=int, default=8)
+    parser.add_argument("--num_choices", type=int, default=5)
     args = parser.parse_args()
     main(args)
 
-# python molecule_build_pretrain_dataset.py --qa_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/PubChemSTM_data/raw --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain
+# python molecule_build_pretrain_dataset.py --qa_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/PubChemSTM_data/raw --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain_multi

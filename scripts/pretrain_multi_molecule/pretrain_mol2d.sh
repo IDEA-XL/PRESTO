@@ -8,6 +8,7 @@ MODEL_VERSION=lmsys/vicuna-7b-v1.5
 MODEL_CLS=LlamaLMMForCausalLM
 DATA_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain"
 OUTPUT_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain"
+PROJECTOR_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain/non_lora_trainables.bin"
 
 deepspeed ../train_model.py \
     --model_name_or_path $MODEL_VERSION \
@@ -15,11 +16,11 @@ deepspeed ../train_model.py \
     --modality_builder molecule_2d \
     --dataset_path $DATA_DIR \
     --output_dir $OUTPUT_DIR \
-    --pretrain_projectors \
-    --lora_enable False \
+    --pretrained_projectors_path $PROJECTOR_DIR \
+    --lora_enable True \
     --bf16 True \
     --tf32 True \
-    --num_train_epochs 10 \
+    --num_train_epochs 5 \
     --gradient_checkpointing True \
     --per_device_train_batch_size 32 \
     --per_device_eval_batch_size 4 \
@@ -36,4 +37,4 @@ deepspeed ../train_model.py \
     --dataloader_num_workers 2 \
     --logging_steps 1 \
     --report_to wandb \
-    --deepspeed ../../configs/zero2.json
+    --deepspeed ../configs/zero2.json
