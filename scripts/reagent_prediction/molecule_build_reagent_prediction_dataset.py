@@ -11,12 +11,12 @@ from bioagent.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
 
 MOLECULE_TOKEN = "<molecule_2d>"
 
-SYSTEM_PROMPT = """You are a chemist. Now you are given a reaction equation. Please predict the product of the reaction.
+SYSTEM_PROMPT = """You are a reagent prediction expert. Now you are given a product molecule and a reaction equation. Please help me to predict the SELFIES representation of the reagent molecule.
 The reaction equation has the following format. We also have a special representation of a molecule. It is extracted from a strong molecule encoder.
 ```
-reactant1.reactant2. ... .reactantN>>product
+reactant1.reactant2. ... .reactantN>>product1.product2. ... .productM
 ```
-Your task is to predict the SELFIES representation of the product molecule. We provide the SELFIES and molecule representation of the reactants."""
+Your task is to predict the SELFIES representation of all the reactant molecules. If there are multiple reactant molecules, please separate them with a period. If there are no reactant molecules, please predict an empty string."""
 
 FEW_SHOT_PROMPT = """Here are some examples of reaction equations."""
 
@@ -24,19 +24,17 @@ FEW_SHOT_TEMPLATE = """Instruction: {instruction}
 
 Input: {input}
 
-Molecule representation of the reactants: {molecules_input}
+Molecule representation of the reaction: {molecules_input}
 
 Output: {output}
 
-Molecule representation of the product: {molecules_output}
-"""
+Molecule representation of the reagent: {molecules_output}"""
 
 PROMPT_TEMPLATE = """Instruction: {instruction}
 
 Input: {input}
 
-Molecule representation of the reactants: {molecules}
-"""
+Molecule representation of the reaction: {molecules}"""
 
 OUTPUT_TEMPLATE = """{output}"""
 
@@ -51,9 +49,10 @@ def load_dataset(reaction_data_path):
 
 
 def process_reaction_equation(reaction):
-    selfies = multicomponent_smiles_to_list(reaction)
+    reactants, products = reaction.split(">>")
+    selfies = multicomponent_smiles_to_list(reactants) + multicomponent_smiles_to_list(products)
     smiles = [sf.decoder(selfie) for selfie in selfies]
-    molecules = ".".join([MOLECULE_TOKEN for _ in range(len(smiles))])
+    molecules = ".".join([MOLECULE_TOKEN for _ in range(len(reactants.split(".")))]) + ">>" + ".".join([MOLECULE_TOKEN for _ in range(len(products.split(".")))])
     return selfies, smiles, molecules
 
 
@@ -153,7 +152,7 @@ def main(args):
                     item['instruction'],
                     item['input'],
                     item['output'],
-                    generate_few_shot_examples(rows, num_examples=0)
+                    generate_few_shot_examples(rows, num_examples=0),
                 )
 
     # train test split based on item['metadata']['split']
@@ -172,5 +171,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
 
-
-# python molecule_build_forward_reaction_prediction_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/forward_reaction_prediction
+# python molecule_build_reagent_prediction_dataset.py --reaction_data_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/reagent_prediction.json --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/reagent_prediction

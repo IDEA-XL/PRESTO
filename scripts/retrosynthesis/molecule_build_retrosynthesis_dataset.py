@@ -36,7 +36,7 @@ Input: {input}
 
 Molecule representation of the products: {molecules}"""
 
-OUTPUT_TEMPLATE = """Output: {output}"""
+OUTPUT_TEMPLATE = """{output}"""
 
 
 def load_dataset(reaction_data_path):
@@ -56,11 +56,10 @@ def process_reaction_equation(reaction):
 
 
 def conversation_train(id, instruction, input, output):
-    selfies, smiles, molecules = process_reaction_equation(output)
+    selfies, smiles, molecules = process_reaction_equation(input)
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
-        "ground_truth": output,
         "messages": [
             {
                 "role": ROLE_SYSTEM,

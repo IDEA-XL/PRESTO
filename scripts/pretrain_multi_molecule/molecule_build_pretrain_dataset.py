@@ -57,8 +57,8 @@ def main(args):
         for row in rows:
             qrows = random.sample(rows, args.num_choices - 1) + [row]
             ret = {
-                "id": row["cid"],
-                "molecules": {"smiles": [qrow["smiles"] for qrow in qrows]},
+                "id": int(row["cid"]),
+                "molecules": {"smiles": [qrow["smiles"] for qrow in qrows], "selfies": [qrow["selfies"] for qrow in qrows]},
                 "messages": [
                     {
                         "role": ROLE_SYSTEM,
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
 
-# python molecule_build_pretrain_dataset.py --qa_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/PubChemSTM_data/raw --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain_multi
+# python molecule_build_pretrain_dataset.py --qa_path /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/PubChemSTM_data/raw --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain_multi_molecule --num_choices 5
