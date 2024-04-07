@@ -39,7 +39,7 @@ def load_dataset(qa_path):
             try:
                 selfies = sf.encoder(smiles)
             except Exception as e:
-                print(f"Failed to encode {smiles} with error {e}")
+                print(f"Failed to encode {smiles} to SELFIES with error {e}")
                 continue
             dataset.append({
                 "cid": cid,

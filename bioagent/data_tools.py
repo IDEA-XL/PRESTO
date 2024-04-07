@@ -19,12 +19,12 @@ from datasets import load_dataset, Dataset
 from PIL import Image
 
 from bioagent.constants import IGNORE_INDEX
-
+from bioagent.modalities.base_modality import Modality
 
 def encode_chat(
     item: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
-    modalities: List["Modality"],
+    modalities: List[Modality],
 ) -> Dict:
     messages = list(item["messages"])
     chat_as_string = tokenizer.apply_chat_template(messages, tokenize=False)
@@ -37,6 +37,11 @@ def encode_chat(
     chat_part = re.split(instruct_pattern, chat_as_string)
     input_ids = []
     labels = []
+    
+    data_dict = dict()
+    for m in modalities:
+        data_dict[m.name] = m.preprocess_rows([item])[0]
+
     for part in chat_part:
         if "[INST]" in part:
             is_instruction = True
@@ -49,10 +54,12 @@ def encode_chat(
                 assert (
                     is_instruction
                 ), "There should be no modality tokens outside of instructions"
+                # WARN: token width should be flexible, before we assume 1
                 m = token_to_modality[subpart]
-                modality_token_counts[m.name] += 1
-                input_ids.extend([m.token_idx] * m.token_width)
-                labels.extend([IGNORE_INDEX] * m.token_width)
+                m_token_width = data_dict[m.name][0][0].shape[0]
+                modality_token_counts[m.name] += m_token_width
+                input_ids.extend([m.token_idx] * m_token_width)
+                labels.extend([IGNORE_INDEX] * m_token_width)
             elif is_instruction:
                 part_ids = tokenizer(subpart, add_special_tokens=False).input_ids
                 input_ids.extend(part_ids)
@@ -64,13 +71,8 @@ def encode_chat(
 
     input_ids = torch.tensor(input_ids, dtype=torch.long)
     labels = torch.tensor(labels, dtype=torch.long)
-
-    data_dict = dict(
-        input_ids=input_ids,
-        labels=labels,
-    )
-    for m in modalities:
-        data_dict[m.name] = m.preprocess_rows([item])[0]
+    
+    data_dict.update({"input_ids": input_ids, "labels": labels})
     return data_dict
 
 

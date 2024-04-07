@@ -14,24 +14,23 @@ def build_patch_mlp_projector(
 
 class _MLPVectorProjector(nn.Module):
     def __init__(
-        self, input_hidden_size: int, lm_hidden_size: int, num_layers: int, width: int
+        self, input_hidden_size: int, lm_hidden_size: int, num_layers: int, 
     ):
         super(_MLPVectorProjector, self).__init__()
-        self.mlps = nn.ModuleList()
-        for _ in range(width):
-            mlp = [nn.Linear(input_hidden_size, lm_hidden_size)]
-            for _ in range(1, num_layers):
-                mlp.append(nn.GELU())
-                mlp.append(nn.Linear(lm_hidden_size, lm_hidden_size))
-            self.mlps.append(nn.Sequential(*mlp))
+        self.mlp = nn.Sequential(
+            nn.Linear(input_hidden_size, lm_hidden_size),
+        )
+        for _ in range(1, num_layers):
+            self.mlp.append(nn.GELU())
+            self.mlp.append(nn.Linear(lm_hidden_size, lm_hidden_size))
 
     def forward(self, x):
-        return torch.cat([mlp(x) for mlp in self.mlps], dim=-2)
+        return self.mlp(x)
 
 
 def build_mlp_vector_projector(
-    input_hidden_size: int, lm_hidden_size: int, num_layers: int, num_tokens: int
+    input_hidden_size: int, lm_hidden_size: int, num_layers: int,
 ):
     return _MLPVectorProjector(
-        input_hidden_size, lm_hidden_size, num_layers, num_tokens
+        input_hidden_size, lm_hidden_size, num_layers,
     )

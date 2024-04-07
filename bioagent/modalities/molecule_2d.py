@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 import selfies as sf
@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils._pytree import tree_map
-from torch_geometric.nn import (MessagePassing, global_mean_pool)
+from torch_geometric.nn import (MessagePassing, global_mean_pool, global_add_pool, global_max_pool)
 
 from bioagent.chemistry_tools import smiles_to_graph
 from bioagent.modalities.base_modality import Modality
@@ -33,7 +33,6 @@ class Molecule2DModality(Modality):
         self,
         model_name_or_path: str = os.path.join(MOLECULE_2D_PATH, "molecule_model.pth"),
         num_projector_layers: int = 2,
-        num_tokens_output: int = 1,
     ):
         self.model_name_or_path = model_name_or_path
         self.module = MoleculeSTM(
@@ -47,14 +46,12 @@ class Molecule2DModality(Modality):
         self.dtype = torch.float32
         self.device = 'cpu'
         self.num_projector_layers = num_projector_layers
-        self.num_tokens_output = num_tokens_output
 
     def build_projector(self, lm_hidden_size: int) -> nn.Module:
         return build_mlp_vector_projector(
             input_hidden_size=self.module.output_dim,
             lm_hidden_size=lm_hidden_size,
             num_layers=self.num_projector_layers,
-            num_tokens=self.num_tokens_output,
         )
 
     @property
@@ -68,10 +65,6 @@ class Molecule2DModality(Modality):
     @property
     def data_key(self) -> str:
         return "molecules"
-
-    @property
-    def token_width(self) -> int:
-        return self.num_tokens_output
 
     def to(self, dtype: torch.dtype, device: torch.device) -> "Molecule2DModality":
         self.dtype = dtype
@@ -95,7 +88,7 @@ class Molecule2DModality(Modality):
         return row_values
 
     @torch.no_grad()
-    def forward(self, *argv) -> List[torch.Tensor] | torch.Tensor:
+    def forward(self, *argv) -> Union[torch.Tensor, List[torch.Tensor]]:
         # mol_features = []
         # for encoded_value in encoded_values:
         #     mol_feature = []
@@ -104,20 +97,23 @@ class Molecule2DModality(Modality):
         #             *tree_map(lambda x: x.to(self.device), mol)
         #         ))
         #     mol_features.append(torch.stack(mol_feature).to(self.dtype) if len(mol_feature) > 0 else None)
-        # return mol_features
+        # return mol_featuresw
         if len(argv) > 1:
-            return self.module(*tree_map(lambda x: x.to(self.device), argv)).to(self.dtype)
-        argv = argv[0]
-        if isinstance(argv[0], tuple):
-            batch = argv
-            return torch.stack([self.module(*tree_map(lambda x: x.to(self.device), item)) for item in batch]).to(self.dtype) if len(batch) > 0 else None
+            return self.module(*tree_map(lambda x: x.to(self.device), argv))[0].to(self.dtype) # take the node feature
+        # argv = argv[0]
+        # if isinstance(argv[0], tuple):
+        #     batch = argv
+        #     return torch.stack([self.module(*tree_map(lambda x: x.to(self.device), item))[0] for item in batch]).to(self.dtype) if len(batch) > 0 else None
         features = []
-        for batch in argv:
+        for batch in argv[0]:
+            batch_features = []
             if len(batch) == 0:
-                features.append(None)
+                batch_features.append(None)
             else:
                 assert len(batch[0]) == 3, "The input should be a tuple of (x, edge_index, edge_attr)"
-                features.append(torch.stack([self.module(*tree_map(lambda x: x.to(self.device), item)) for item in batch]).to(self.dtype))
+                for item in batch:
+                    batch_features.append(self.module(*tree_map(lambda x: x.to(self.device), item))[0].to(self.dtype))
+            features.append(batch_features)
         return features
         
 
@@ -197,6 +193,7 @@ class MoleculeSTM(nn.Module):
         self.graph_pred_linear = nn.Linear(hidden_size, 1)      # unused
         self.pooler = global_mean_pool
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index, edge_attr)->Tuple[torch.Tensor, torch.Tensor]:
+        # return the node feature and the pooled graph feature
         mol_feature = self.molecule_node_model(x, edge_index, edge_attr)
-        return self.pooler(mol_feature, torch.zeros(mol_feature.size(0), dtype=torch.long, device=mol_feature.device))
+        return mol_feature, self.pooler(mol_feature, torch.zeros(mol_feature.size(0), dtype=torch.long, device=mol_feature.device))

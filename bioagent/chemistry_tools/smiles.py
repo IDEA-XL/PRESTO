@@ -103,3 +103,13 @@ def smiles_to_coords(smiles, filter_h_only=True, max_attempts=1000, random_seed=
     assert len(atoms) == len(coordinates), f"Coordinates shape is not aligned with {smiles}"
 
     return atoms, coordinates
+
+def convert_to_canonical_smiles(smiles):
+    if not smiles:
+        return None
+    molecule = Chem.MolFromSmiles(smiles)
+    if molecule is not None:
+        canonical_smiles = Chem.MolToSmiles(molecule, isomericSmiles=False, canonical=True)
+        return canonical_smiles
+    else:
+        return None

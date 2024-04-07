@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # set as environment variables
-export MOLECULE_2D_PATH="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/MoleculeSTM/"
-export WANDB_API_KEY="8d2eaed6c14b0b07e12ac075af68b8ee1c372483"
-
-MODEL_VERSION=lmsys/vicuna-7b-v1.5
+export HF_HOME="/cto_labs/AIDD/cache"
+export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
+MODEL_VERSION=checkpoints/vicuna-7b-v1.5
 MODEL_CLS=LlamaLMMForCausalLM
+
 DATA_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/data/Mol-Instructions/data/Molecule-oriented_Instructions/pretrain"
-OUTPUT_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain"
-PROJECTOR_DIR="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain/non_lora_trainables.bin"
+
+OUTPUT_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain"
+PROJECTOR_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-pretrain/non_lora_trainables.bin"
 
 deepspeed ../train_model.py \
     --model_name_or_path $MODEL_VERSION \
@@ -36,5 +37,5 @@ deepspeed ../train_model.py \
     --lr_scheduler_type "cosine" \
     --dataloader_num_workers 2 \
     --logging_steps 1 \
-    --report_to wandb \
+    --report_to none \
     --deepspeed ../configs/zero2.json

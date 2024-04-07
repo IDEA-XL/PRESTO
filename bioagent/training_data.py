@@ -80,6 +80,7 @@ class DataCollatorForSupervisedLMMDataset:
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
+        # (modality, batch_size, instance_idx, x/edge_index/edge_attr)
         for m in self.modalities:
             batch[m.name] = [instance[m.name] for instance in instances]
 

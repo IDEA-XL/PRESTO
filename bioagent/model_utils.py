@@ -70,7 +70,13 @@ def get_peft_state_non_lora(named_params) -> Dict:
     return to_return
 
 
-def make_model_lora(model, training_args: "TrainingArguments"):
+def get_mm_adapter_state(named_params, keys_to_match):
+    to_return = {k: t for k, t in named_params if any(key_match in k for key_match in keys_to_match)}
+    to_return = {k: maybe_zero_3(v, ignore_status=True).cpu() for k, v in to_return.items()}
+    return to_return
+
+
+def make_model_lora(model, training_args):
     from peft import LoraConfig, get_peft_model
 
     lora_config = LoraConfig(
