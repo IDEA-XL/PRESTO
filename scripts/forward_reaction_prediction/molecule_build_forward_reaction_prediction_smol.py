@@ -107,7 +107,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
         "messages": [
             {
                 "role": ROLE_SYSTEM,
-                "content": SYSTEM_PROMPT
+                "content": system_prompt
             },
             {
                 "role": ROLE_USER,
@@ -125,7 +125,6 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
     _, _, output = process_reaction_equation(output, format, False)
     prompt_template = random.choice(PROMPT_TEMPLATES)
     input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
-    output_template = prompt_template["output"].replace("<OUTPUT>", output)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
     if not few_shots:
@@ -134,7 +133,7 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         few_shot_examples = "\n".join(
             f"Few-shot example {i+1}: {example['input']} -> {example['output']}" for i, example in enumerate(few_shots)
         )
-        content = FEW_SHOT_PROMPT + "\n" + few_shot_examples + "\n" + input_template + "\n" + molecules_input_template
+        content = FEW_SHOT_PROMPT + "\n" + few_shot_examples + "\n" + input_template
         
     return {
         "id": id,
@@ -143,7 +142,7 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         "messages": [
             {
                 "role": ROLE_SYSTEM,
-                "content": SYSTEM_PROMPT
+                "content": system_prompt
             },
             {
                 "role": ROLE_USER,

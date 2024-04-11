@@ -107,7 +107,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
         "messages": [
             {
                 "role": ROLE_SYSTEM,
-                "content": SYSTEM_PROMPT
+                "content": system_prompt
             },
             {
                 "role": ROLE_USER,
@@ -122,10 +122,8 @@ def conversation_train(id, input, output, format = "smiles", token=True):
 
 def conversation_test(id, input, output, few_shots: list = None, format = "smiles", token=True):
     selfies, smiles, molecules = process_reaction_equation(input, format, token)
-    _, _, output = process_reaction_equation(output, format, False)
     prompt_template = random.choice(PROMPT_TEMPLATES)
     input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
-    output_template = prompt_template["output"].replace("<OUTPUT>", output)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
     if not few_shots:
@@ -134,7 +132,7 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         few_shot_examples = "\n".join(
             f"Few-shot example {i+1}: {example['input']} -> {example['output']}" for i, example in enumerate(few_shots)
         )
-        content = FEW_SHOT_PROMPT + "\n" + few_shot_examples + "\n" + input_template + "\n" + molecules_input_template
+        content = FEW_SHOT_PROMPT + "\n" + few_shot_examples + "\n" + input_template
         
     return {
         "id": id,
@@ -143,7 +141,7 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         "messages": [
             {
                 "role": ROLE_SYSTEM,
-                "content": SYSTEM_PROMPT
+                "content": system_prompt 
             },
             {
                 "role": ROLE_USER,
@@ -158,11 +156,10 @@ def generate_few_shot_examples(rows, num_examples=5):
     return random.sample(sorted(rows, key=lambda x: random.random()), num_examples)
 
 def main(args):
-    tokenizer = tiktoken.get_encoding("cl100k_base")
     data_files = {
-        "train": os.path.join(args.data_dir, "train/retronsynthesis.jsonl"),
-        "dev": os.path.join(args.data_dir, "dev/retronsynthesis.jsonl"),
-        "test": os.path.join(args.data_dir, "test/retronsynthesis.jsonl")
+        "train": os.path.join(args.data_dir, "train/retrosynthesis.jsonl"),
+        "dev": os.path.join(args.data_dir, "dev/retrosynthesis.jsonl"),
+        "test": os.path.join(args.data_dir, "test/retrosynthesis.jsonl")
     }
     dataset = {
         "train": Dataset.from_json(data_files["train"]),
