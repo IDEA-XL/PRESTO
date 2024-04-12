@@ -31,6 +31,7 @@ def encode_chat(
 
     token_to_modality = {m.token: m for m in modalities}
     modality_token_counts = Counter()
+    modality_instance_counts = Counter()
     instruct_pattern = r"(\[INST\][\s\S]*?\[\/INST\])"
     pattern = "(" + "|".join(re.escape(m.token) for m in modalities) + ")"
 
@@ -56,7 +57,8 @@ def encode_chat(
                 ), "There should be no modality tokens outside of instructions"
                 # WARN: token width should be flexible, before we assume 1
                 m = token_to_modality[subpart]
-                m_token_width = data_dict[m.name][0][0].shape[0] # fix this
+                m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
+                modality_instance_counts[m.name] += 1
                 modality_token_counts[m.name] += m_token_width
                 input_ids.extend([m.token_idx] * m_token_width)
                 labels.extend([IGNORE_INDEX] * m_token_width)
