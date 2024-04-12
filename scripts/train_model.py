@@ -14,9 +14,7 @@ from bioagent.training import (
     ModelArguments,
     train_for_modalities,
 )
-from bioagent.training_data import (
-    DataArguments,
-)
+from bioagent.data import DataArguments
 from bioagent.language_models import LANGUAGE_MODEL_NAME_TO_CLASS
 from bioagent.modalities import MODALITY_BUILDERS
 

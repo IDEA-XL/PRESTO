@@ -4,7 +4,8 @@
 export HF_HOME="/cto_labs/AIDD/cache"
 export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 
-MODEL_VERSION=checkpoints/vicuna-7b-v1.5
+MODEL_VERSION=vicuna-7b-v1.5
+BASE_LLM_PATH=checkpoints/$MODEL_VERSION
 MODEL_CLS=LlamaLMMForCausalLM
 DATA_DIR="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1"
 OUTPUT_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1"
@@ -12,10 +13,11 @@ OUTPUT_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1"
 NUM_GPUS=8
 
 deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
-    --model_name_or_path $MODEL_VERSION \
+    --model_name_or_path $BASE_LLM_PATH \
     --model_cls $MODEL_CLS \
     --modality_builder molecule_2d \
     --dataset_path $DATA_DIR \
+    --data_mixture "pubchem_caps" \
     --output_dir $OUTPUT_DIR \
     --pretrain_projectors \
     --lora_enable False \
@@ -23,9 +25,9 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --tf32 True \
     --num_train_epochs 5 \
     --gradient_checkpointing True \
-    --per_device_train_batch_size 16 \
+    --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 1 \
+    --gradient_accumulation_steps 2 \
     --model_max_length 2048 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \

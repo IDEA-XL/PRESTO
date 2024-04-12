@@ -121,8 +121,7 @@ class LMMMetaForCausalLM(ABC):
                     else:
                         ii += 1       
                     if len(indices) == len(instances_token_width):
-                        break # early stop if we've found all instances
-                assert len(instances_token_width) == len(indices), "Number of instances and indices should match"        
+                        break # early stop if we've found all instances        
 
                 # fill these embeddings with the projected modality tensor
                 last_covered_idx = -1
@@ -132,9 +131,13 @@ class LMMMetaForCausalLM(ABC):
                         # handles bug caused by back-to-back tokens
                         continue
                     batch_modality_tensor = projected_tensors[mi][i][k]
-                    inputs_embeds[
-                        i, possible_token_idx : possible_token_idx + instances_token_width[k]
-                    ] = batch_modality_tensor
+                    try:
+                        inputs_embeds[
+                            i, possible_token_idx : possible_token_idx + instances_token_width[k]
+                        ] = batch_modality_tensor
+                    except:
+                        breakpoint()
                     last_covered_idx = possible_token_idx + instances_token_width[k] - 1
 
+        del projected_tensors, input_ids
         return None, attention_mask, past_key_values, inputs_embeds, labels

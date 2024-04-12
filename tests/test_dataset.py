@@ -4,7 +4,14 @@ import torch
 
 from bioagent.modalities import MODALITY_BUILDERS
 from bioagent.model_utils import fix_tokenizer
-from bioagent.training_data import DataArguments, LMMDataset, DataCollatorForSupervisedLMMDataset
+from bioagent.data import (
+    DataArguments, 
+    LMMDataset, 
+    DataCollatorForSupervisedLMMDataset, 
+    LMMInterleavedDataset,
+    make_supervised_data_module,
+)
+from tqdm import tqdm
 
 # export CHAT_TEMPLATE_PATH=/cto_labs/AIDD/chat_templates/vicuna.jinja
 
@@ -14,7 +21,9 @@ if __name__ == "__main__":
     model_max_length = 2048
     
     data_args = DataArguments(
-        dataset_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1"
+        # dataset_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1",
+        dataset_path="/cto_labs/AIDD/DATA/React/USPTO/Interleaved",
+        data_mixture="uspto_rxn_interleaved",
     )   
     llama_path = "checkpoints/vicuna-7b-v1.5"
     
@@ -36,11 +45,18 @@ if __name__ == "__main__":
     fix_tokenizer(tokenizer)
     
     # load dataset
-    dataset = LMMDataset(data_args, tokenizer, modalities)
+    data_module = make_supervised_data_module(tokenizer, data_args, modalities)
+    dataset = data_module["train_dataset"]
     
-    # load collator
-    collator = DataCollatorForSupervisedLMMDataset(tokenizer, modalities)
-    # # fetch the first batch
-    batch = collator([dataset[0], dataset[1]])
-    breakpoint()
-        
+    # iterate over the dataset
+    miss_match = 0
+    for i, batch in enumerate(tqdm(dataset)):
+        try:
+            pass
+        except Exception as e:
+            breakpoint()
+            miss_match += 1
+            continue
+        if i>100:
+            break
+    print(f"Miss match: {miss_match}")

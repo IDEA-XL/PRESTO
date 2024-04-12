@@ -3,20 +3,24 @@ from dataclasses import dataclass, field
 import logging
 import os
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, ConcatDataset
 from datasets import load_from_disk, load_dataset, Dataset as HFDataset
 import transformers
 import torch
 
 from bioagent.modalities.base_modality import Modality
 from bioagent.constants import IGNORE_INDEX
-from bioagent.data_tools import encode_chat
+from bioagent.data_tools import encode_chat, encode_interleaved_data
+import bioagent.data.data_mixture as datasets_mixture
 
 
 @dataclass
 class DataArguments:
     dataset_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
+    )
+    data_mixture: str = field(
+        default="pubchem_cap", metadata={"help": "Datasets mixture to use."}
     )
 
 
@@ -55,6 +59,28 @@ class LMMDataset(Dataset):
                 new_i = 0
             logging.error(f"Error encoding chat: {e} index={i} trying index={new_i}")
             return self.__getitem__(new_i)
+        
+
+class LMMInterleavedDataset(LMMDataset):
+    r"""
+    Interleaved dataset for LMM pretraining. Each sample is a naive concatenation of multiple modality tokens
+    and the surrounding text (Not Chat Format). The modality tokens are interleaved with the text tokens.
+    """
+    def __getitem__(self, i) -> Dict:
+        try:
+            item = self.dataset[i]
+            return encode_interleaved_data(item, self.tokenizer, self.modalities)
+        except Exception as e:
+            new_i = i + 1
+            if new_i >= len(self):
+                new_i = 0
+            logging.error(f"Error encoding chat: {e} index={i} trying index={new_i}")
+            return self.__getitem__(new_i)
+        
+
+class LMMConcatDataset(ConcatDataset):
+    def get_example(self) -> Dict:
+        return self.datasets[0][0]
 
 
 @dataclass
@@ -85,3 +111,36 @@ class DataCollatorForSupervisedLMMDataset:
             batch[m.name] = [instance[m.name] for instance in instances]
 
         return batch
+
+
+def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
+                                data_args: DataArguments,
+                                modalities: List[Modality],
+                                ) -> Dict:
+    """Make dataset and collator for supervised fine-tuning.
+    This function is originally implemented by the LLaVA team and 
+    modified by Jason Lu and Haotian Tang."""
+    all_datasets = []
+    extra_info = []
+    datasets_mixture.register_datasets_mixtures()
+    mixture = datasets_mixture.DATASETS_MIXTURES[data_args.data_mixture]
+    for dataset in mixture:
+        dataset_type = dataset.dataset_type
+        if os.path.exists(dataset.data_path):
+            data_args.dataset_path = dataset.data_path
+        if dataset_type == "cap":
+            dataset_cls = LMMDataset
+        elif dataset_type == "interleaved":
+            dataset_cls = LMMInterleavedDataset
+        else:
+            raise NotImplementedError
+        train_dataset = dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args,)
+        all_datasets.append(train_dataset)
+        extra_info.append(len(train_dataset))
+    
+    all_datasets = LMMConcatDataset(all_datasets)
+
+    data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
+    return dict(train_dataset=all_datasets,
+                eval_dataset=None,
+                data_collator=data_collator)

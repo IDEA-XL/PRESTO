@@ -12,10 +12,9 @@ import transformers
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import Trainer, TrainerCallback
 
-from bioagent.training_data import (
+from bioagent.data import (
     DataArguments,
-    LMMDataset,
-    DataCollatorForSupervisedLMMDataset,
+    make_supervised_data_module,
 )
 from bioagent.model_utils import (
     make_model_lora,
@@ -217,8 +216,7 @@ def train_for_modalities(
     )
     fix_tokenizer(tokenizer)
 
-    dataset = LMMDataset(data_args, tokenizer, modalities)
-    collator = DataCollatorForSupervisedLMMDataset(tokenizer, modalities)
+    data_module = make_supervised_data_module(tokenizer, data_args, modalities)
 
     model = model_cls.from_pretrained(
         model_args.model_name_or_path,
@@ -279,6 +277,7 @@ def train_for_modalities(
             f"* {m.__class__.__name__} (use `{m.token}` in text and provide `{m.data_key}`"
             for m in modalities
         ]
+        dataset = data_module["train_dataset"]
         readme_text = README_TEMPLATE.format(
             base_model=model_args.model_name_or_path,
             dataset=data_args.dataset_path,
@@ -309,10 +308,8 @@ def train_for_modalities(
         model=model,
         tokenizer=tokenizer,
         args=training_args,
-        data_collator=collator,
-        train_dataset=dataset,
-        eval_dataset=None,
         callbacks=[SaveCallback()],
+        **data_module,
     )
 
     if list(pathlib.Path(training_args.output_dir).glob(f"{PREFIX_CHECKPOINT_DIR}-*")):
