@@ -10,18 +10,20 @@ import os
 
 import transformers
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-from transformers import Trainer
+from transformers import Trainer, TrainerCallback
 
-from bioagent.training_data import (
+from bioagent.data import (
     DataArguments,
-    LMMDataset,
-    DataCollatorForSupervisedLMMDataset,
+    make_supervised_data_module,
 )
 from bioagent.model_utils import (
     make_model_lora,
     get_peft_state,
     get_peft_state_non_lora,
     fix_tokenizer,
+    get_peft_state,
+    get_peft_state_non_lora,
+    get_mm_adapter_state,
 )
 from bioagent.modalities.base_modality import Modality
 
@@ -70,6 +72,12 @@ GitHub: https://github.com/sshh12/bioagent (includes training scripts and basic 
 
 """
 
+local_rank = None
+
+def rank0_print(*args):
+    if local_rank == 0:
+        print(*args)
+
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
@@ -113,6 +121,43 @@ class ModelArguments:
     model_lora_path: Optional[str] = field(default=None)
 
 
+def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
+                                   output_dir: str):
+    """Collects the state dict and dump to disk."""
+
+    if getattr(trainer.args, "pretrain_projectors", False):
+        # Only save Adapter
+        keys_to_match = ['_lmm_projector']
+
+        weight_to_save = get_mm_adapter_state(trainer.model.named_parameters(), keys_to_match)
+        trainer.model.config.save_pretrained(output_dir)
+
+        current_folder = output_dir.split('/')[-1]
+        parent_folder = os.path.dirname(output_dir)
+        if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
+            if current_folder.startswith('checkpoint-'):
+                lmm_projector_folder = os.path.join(parent_folder, "lmm_projector")
+                os.makedirs(lmm_projector_folder, exist_ok=True)
+                torch.save(weight_to_save, os.path.join(lmm_projector_folder, f'{current_folder}.bin'))
+            else:
+                torch.save(weight_to_save, os.path.join(output_dir, f'lmm_projector.bin'))
+        return
+
+    if trainer.deepspeed:
+        torch.cuda.synchronize()
+        trainer.save_model(output_dir)
+        return
+
+    state_dict = trainer.model.state_dict()
+    if trainer.args.should_save:
+        cpu_state_dict = {
+            key: value.cpu()
+            for key, value in state_dict.items()
+        }
+        del state_dict
+        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
+
+
 class LMMTrainer(Trainer):
     def _save_checkpoint(self, model, trial, metrics=None):
         checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
@@ -153,6 +198,9 @@ def train_for_modalities(
     data_args: DataArguments,
     modalities: List[Modality],
 ):
+    global local_rank
+    local_rank = training_args.local_rank
+    
     for m in modalities:
         m.to(
             dtype=torch.bfloat16 if training_args.bf16 else torch.float16,
@@ -168,8 +216,7 @@ def train_for_modalities(
     )
     fix_tokenizer(tokenizer)
 
-    dataset = LMMDataset(data_args, tokenizer, modalities)
-    collator = DataCollatorForSupervisedLMMDataset(tokenizer, modalities)
+    data_module = make_supervised_data_module(tokenizer, data_args, modalities)
 
     model = model_cls.from_pretrained(
         model_args.model_name_or_path,
@@ -227,9 +274,10 @@ def train_for_modalities(
 
     with open(os.path.join(training_args.output_dir, "README.md"), "w") as f:
         modalities_text = [
-            f"* {m.__class__.__name__} (use `{m.token}` in text and provide `{m.data_key}`, encoded as {m.token_width} tokens)"
+            f"* {m.__class__.__name__} (use `{m.token}` in text and provide `{m.data_key}`"
             for m in modalities
         ]
+        dataset = data_module["train_dataset"]
         readme_text = README_TEMPLATE.format(
             base_model=model_args.model_name_or_path,
             dataset=data_args.dataset_path,
@@ -240,14 +288,28 @@ def train_for_modalities(
             repr_model=f"{model_cls.__name__}.model =\n\n{repr(model)}",
         )
         f.write(readme_text)
+    
+    class SaveCallback(TrainerCallback):
+        def on_save(self, args, state, control, **kwargs):
+            checkpoint_dir = os.path.join(args.output_dir, 'checkpoint-{}'.format(state.global_step))
+            if args.lora_enable:
+                state_dict = get_peft_state(
+                    model.named_parameters(), training_args.lora_bias
+                )
+                non_lora_state_dict = get_peft_state_non_lora(
+                    model.named_parameters()
+                )
+                if args.local_rank in [-1, 0]:
+                    model.config.save_pretrained(checkpoint_dir)
+                    model.save_pretrained(checkpoint_dir, state_dict=state_dict)
+                    torch.save(non_lora_state_dict, os.path.join(checkpoint_dir, 'non_lora_trainables.bin'))
 
     trainer = LMMTrainer(
         model=model,
         tokenizer=tokenizer,
         args=training_args,
-        data_collator=collator,
-        train_dataset=dataset,
-        eval_dataset=None,
+        callbacks=[SaveCallback()],
+        **data_module,
     )
 
     if list(pathlib.Path(training_args.output_dir).glob(f"{PREFIX_CHECKPOINT_DIR}-*")):
@@ -258,12 +320,17 @@ def train_for_modalities(
     trainer.save_state()
 
     model.config.use_cache = True
-    model.config.save_pretrained(training_args.output_dir)
-    state_dict = get_peft_state(model.named_parameters(), training_args.lora_bias)
-    model.save_pretrained(training_args.output_dir, state_dict=state_dict)
-
-    non_lora_state_dict = get_peft_state_non_lora(model.named_parameters())
-    torch.save(
-        non_lora_state_dict,
-        os.path.join(training_args.output_dir, "non_lora_trainables.bin"),
-    )
+    
+    if training_args.lora_enable:
+        state_dict = get_peft_state(
+            model.named_parameters(), training_args.lora_bias
+        )
+        non_lora_state_dict = get_peft_state_non_lora(
+            model.named_parameters()
+        )
+        if training_args.local_rank == 0 or training_args.local_rank == -1:
+            model.config.save_pretrained(training_args.output_dir)
+            model.save_pretrained(training_args.output_dir, state_dict=state_dict)
+            torch.save(non_lora_state_dict, os.path.join(training_args.output_dir, 'non_lora_trainables.bin'))
+    else:
+        safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)

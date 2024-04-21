@@ -26,10 +26,10 @@ class Modality(ABC):
     def data_key(self) -> str:
         pass
 
-    @property
-    @abstractmethod
-    def token_width(self) -> int:
-        pass
+    # @property
+    # @abstractmethod
+    # def token_width(self) -> int:
+    #     pass
 
     @cached_property
     def token_idx(self) -> int:

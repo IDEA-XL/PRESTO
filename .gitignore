@@ -167,3 +167,6 @@ notebooks/
 
 # Log files
 *logs/
+
+# Checkpoints
+checkpoints/

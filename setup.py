@@ -8,7 +8,7 @@ setup(
     name="bioagent",
     version="0.0.4",
     description="",
-    author="Daniel",
+    author="CiaoHe",
     license="Apache License 2.0",
     packages=find_packages(),
     include_package_data=True,

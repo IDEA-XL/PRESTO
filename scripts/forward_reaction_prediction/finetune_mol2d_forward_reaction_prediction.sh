@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # set as environment variables
-export MOLECULE_2D_PATH="/gpfs/gibbs/pi/gerstein/xt86/bioagent/checkpoints/MoleculeSTM/"
-export WANDB_API_KEY="8d2eaed6c14b0b07e12ac075af68b8ee1c372483"
+export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 
 MODEL_VERSION=lmsys/vicuna-7b-v1.5
 MODEL_CLS=LlamaLMMForCausalLM

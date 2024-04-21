@@ -69,17 +69,13 @@ class LMMMetaForCausalLM(ABC):
 
                 # project each batch into language model token space
                 for m_val in m_vals:
-                    mp_vals.append(proj(m_val))
-
-                assert all(
-                    mp_val.shape[1:] == (m.token_width, self.config.hidden_size)
-                    for mp_val in mp_vals
-                ), (
-                    "Modality tensors have incorrect shape, check your projector implementation "
-                    + str([mp_val.shape[1:] for mp_val in mp_vals])
-                    + " vs expected "
-                    + str((m.token_width, self.config.hidden_size))
-                )
+                    # each m_val is 'instance_idx x modality_token_width x embedding_hidden_size', but 'modality_token_width' is variable
+                    instance_val_list = []
+                    for each_instance in m_val:
+                        instance_val = proj(each_instance) # 'modality_token_width x lm_hidden_size'
+                        instance_val_list.append(instance_val)
+                    mp_vals.append(instance_val_list)
+                    
                 projected_tensors.append(mp_vals)
 
         indices = None
@@ -101,30 +97,47 @@ class LMMMetaForCausalLM(ABC):
             for mi, m in enumerate(self.modalities):
                 # locate the group of tokens for this modality
                 m_mask = (input_ids_sample == m.token_idx).float()
-                m_kernel = torch.tensor(
-                    [-1] * m.token_width, dtype=m_mask.dtype, device=m_mask.device
-                )
-                m_conv = conv1d(
-                    m_mask.unsqueeze(0).unsqueeze(0),
-                    m_kernel.unsqueeze(0).unsqueeze(0),
-                )
+                
+                # # Below: for constant token width
+                # m_kernel = torch.tensor(
+                #     [-1] * m.token_width, dtype=m_mask.dtype, device=m_mask.device
+                # )
+                # m_conv = conv1d(
+                #     m_mask.unsqueeze(0).unsqueeze(0),
+                #     m_kernel.unsqueeze(0).unsqueeze(0),
+                # )
 
-                # where do we see `token_width`-tokens in a row?
-                indices = (m_conv[0, 0] == -m.token_width).nonzero(as_tuple=True)[0]
+                # # where do we see `token_width`-tokens in a row?
+                # indices = (m_conv[0, 0] == -m.token_width).nonzero(as_tuple=True)[0]
+                
+                instances_token_width = [instance.shape[0] for instance in projected_tensors[mi][i]] 
+                # find start indices of each instance
+                indices = []
+                ii = 0
+                while ii < len(m_mask):
+                    if m_mask[ii] == 1:
+                        indices.append(ii) # find one instance
+                        ii += instances_token_width[len(indices) - 1]
+                    else:
+                        ii += 1       
+                    if len(indices) == len(instances_token_width):
+                        break # early stop if we've found all instances        
 
                 # fill these embeddings with the projected modality tensor
                 last_covered_idx = -1
-                k = 0
-                for possible_token_idx in indices:
+                for k, possible_token_idx in enumerate(indices):
                     if possible_token_idx <= last_covered_idx:
                         # make sure we don't overwrite an instance we've already covered
                         # handles bug caused by back-to-back tokens
                         continue
                     batch_modality_tensor = projected_tensors[mi][i][k]
-                    inputs_embeds[
-                        i, possible_token_idx : possible_token_idx + m.token_width
-                    ] = batch_modality_tensor
-                    last_covered_idx = possible_token_idx + m.token_width - 1
-                    k += 1
+                    try:
+                        inputs_embeds[
+                            i, possible_token_idx : possible_token_idx + instances_token_width[k]
+                        ] = batch_modality_tensor
+                    except:
+                        breakpoint()
+                    last_covered_idx = possible_token_idx + instances_token_width[k] - 1
 
+        del projected_tensors, input_ids
         return None, attention_mask, past_key_values, inputs_embeds, labels

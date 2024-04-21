@@ -19,24 +19,29 @@ from datasets import load_dataset, Dataset
 from PIL import Image
 
 from bioagent.constants import IGNORE_INDEX
-
+from bioagent.modalities.base_modality import Modality
 
 def encode_chat(
     item: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
-    modalities: List["Modality"],
+    modalities: List[Modality],
 ) -> Dict:
     messages = list(item["messages"])
     chat_as_string = tokenizer.apply_chat_template(messages, tokenize=False)
 
     token_to_modality = {m.token: m for m in modalities}
-    modality_token_counts = Counter()
+    modality_instance_counts = Counter()
     instruct_pattern = r"(\[INST\][\s\S]*?\[\/INST\])"
     pattern = "(" + "|".join(re.escape(m.token) for m in modalities) + ")"
 
     chat_part = re.split(instruct_pattern, chat_as_string)
     input_ids = []
     labels = []
+    
+    data_dict = dict()
+    for m in modalities:
+        data_dict[m.name] = m.preprocess_rows([item])[0]
+
     for part in chat_part:
         if "[INST]" in part:
             is_instruction = True
@@ -49,10 +54,12 @@ def encode_chat(
                 assert (
                     is_instruction
                 ), "There should be no modality tokens outside of instructions"
+                # WARN: token width should be flexible, before we assume 1
                 m = token_to_modality[subpart]
-                modality_token_counts[m.name] += 1
-                input_ids.extend([m.token_idx] * m.token_width)
-                labels.extend([IGNORE_INDEX] * m.token_width)
+                m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
+                modality_instance_counts[m.name] += 1
+                input_ids.extend([m.token_idx] * m_token_width)
+                labels.extend([IGNORE_INDEX] * m_token_width)
             elif is_instruction:
                 part_ids = tokenizer(subpart, add_special_tokens=False).input_ids
                 input_ids.extend(part_ids)
@@ -64,13 +71,44 @@ def encode_chat(
 
     input_ids = torch.tensor(input_ids, dtype=torch.long)
     labels = torch.tensor(labels, dtype=torch.long)
+    
+    data_dict.update({"input_ids": input_ids, "labels": labels})
+    return data_dict
 
-    data_dict = dict(
-        input_ids=input_ids,
-        labels=labels,
-    )
+def encode_interleaved_data(
+    item: Dict,
+    tokenizer: transformers.PreTrainedTokenizer,
+    modalities: List[Modality],
+):  
+    token_to_modality = {m.token: m for m in modalities}
+    pattern = "(" + "|".join(re.escape(m.token) for m in modalities) + ")"
+    input_ids = []
+    labels = []
+    data_dict = dict()
+    modality_instance_counts = Counter()
+    
     for m in modalities:
+        # ensure the item has key like "smiles" or "selfies"
         data_dict[m.name] = m.preprocess_rows([item])[0]
+    
+    for subpart in re.split(pattern, item["text"]):
+        if not subpart:
+            continue
+        if subpart in token_to_modality:
+            m = token_to_modality[subpart]
+            m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
+            modality_instance_counts[m.name] += 1
+            input_ids.extend([m.token_idx] * m_token_width)
+            labels.extend([IGNORE_INDEX] * m_token_width)
+        else:
+            part_ids = tokenizer(subpart, add_special_tokens=False).input_ids
+            input_ids.extend(part_ids)
+            labels.extend(part_ids)
+
+    input_ids = torch.tensor(input_ids, dtype=torch.long)
+    labels = torch.tensor(labels, dtype=torch.long)
+    
+    data_dict.update({"input_ids": input_ids, "labels": labels})
     return data_dict
 
 
