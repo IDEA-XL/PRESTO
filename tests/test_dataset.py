@@ -22,8 +22,7 @@ if __name__ == "__main__":
     
     data_args = DataArguments(
         # dataset_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1",
-        dataset_path="/cto_labs/AIDD/DATA/React/USPTO/Interleaved",
-        data_mixture="uspto_rxn_interleaved",
+        data_mixture="sft",
     )   
     llama_path = "checkpoints/vicuna-7b-v1.5"
     
@@ -57,6 +56,4 @@ if __name__ == "__main__":
             breakpoint()
             miss_match += 1
             continue
-        if i>100:
-            break
     print(f"Miss match: {miss_match}")

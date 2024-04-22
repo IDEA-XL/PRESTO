@@ -130,6 +130,8 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
             data_args.dataset_path = dataset.data_path
         if dataset_type == "cap":
             dataset_cls = LMMDataset
+        elif dataset_type == "sft":
+            dataset_cls = LMMDataset
         elif dataset_type == "interleaved":
             dataset_cls = LMMInterleavedDataset
         else:

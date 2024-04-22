@@ -55,7 +55,6 @@ def encode_chat(
                 assert (
                     is_instruction
                 ), "There should be no modality tokens outside of instructions"
-                # WARN: token width should be flexible, before we assume 1
                 m = token_to_modality[subpart]
                 m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
                 modality_instance_counts[m.name] += 1
