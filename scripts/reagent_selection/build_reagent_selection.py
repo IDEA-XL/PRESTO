@@ -45,38 +45,39 @@ def load_dataset(mapping_dict, split, selection_target:str):
     system_prompt, user_query_template = SYSTEM_PROMPT_MAP[selection_target].split("\n\n")
     rows = mapping_dict[split][selection_target]
     dataset = []
-    for row in rows:
+    for i,row in enumerate(rows):
         smiles_list = []
         if selection_target == "reagent_selection":
-            user_query_template = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
+            user_query = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
             smiles_list.append(row["reactant"])
-            user_query_template = user_query_template.replace("<LIGAND_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<LIGAND_1>", MOLECULE_TOKEN)
             smiles_list.append(row["ligand"])
-            user_query_template = user_query_template.replace("<SOLVENT_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<SOLVENT_1>", MOLECULE_TOKEN)
             smiles_list.append(row["solvent"])
-            user_query_template = user_query_template.replace("<BASE_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<BASE_1>", MOLECULE_TOKEN)
             smiles_list.append(row["base"])
         elif selection_target == "ligand_selection":
-            user_query_template = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
+            user_query = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
             smiles_list.append(row["reactant"][0])
-            user_query_template = user_query_template.replace("<REACTANT_2>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<REACTANT_2>", MOLECULE_TOKEN)
             smiles_list.append(row["reactant"][1])
-            user_query_template = user_query_template.replace("<BASE_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<BASE_1>", MOLECULE_TOKEN)
             smiles_list.append(row["base"])
-            user_query_template = user_query_template.replace("<SOLVENT_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<SOLVENT_1>", MOLECULE_TOKEN)
             smiles_list.append(row["solvent"])
         elif selection_target == "solvent_selection":
-            user_query_template = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
+            user_query = user_query_template.replace("<REACTANT_1>", MOLECULE_TOKEN)
             smiles_list.append(row["reactant"][0])
-            user_query_template = user_query_template.replace("<REACTANT_2>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<REACTANT_2>", MOLECULE_TOKEN)
             smiles_list.append(row["reactant"][1])
-            user_query_template = user_query_template.replace("<LIGAND_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<LIGAND_1>", MOLECULE_TOKEN)
             smiles_list.append(row["ligand"])
-            user_query_template = user_query_template.replace("<BASE_1>", MOLECULE_TOKEN)
+            user_query = user_query.replace("<BASE_1>", MOLECULE_TOKEN)
             smiles_list.append(row["base"])
-        user_query_template = user_query_template.replace("<CANDIDATES_LIST>", ",".join([MOLECULE_TOKEN] * len(row["candidates"])))
-        for i in range(len(row["candidates"])):
-            smiles_list.append(row["candidates"][i])
+        user_query = user_query.replace("<CANDIDATES_LIST>", ",".join([MOLECULE_TOKEN] * len(row["candidates"])))
+        for candidate in row["candidates"]:
+            smiles_list.append(candidate)
+        assert user_query.count(MOLECULE_TOKEN) == len(smiles_list)
         
         messages = [
             {
@@ -85,7 +86,7 @@ def load_dataset(mapping_dict, split, selection_target:str):
             },
             {
                 "role": ROLE_USER,
-                "content": user_query_template,
+                "content": user_query,
             },
             {
                 "role": ROLE_ASSISTANT,
