@@ -1,3 +1,21 @@
+# Copyright 2024 NVIDIA CORPORATION & AFFILIATES
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import List, Dict, Sequence
 from dataclasses import dataclass, field
 import logging
@@ -11,35 +29,92 @@ import torch
 from bioagent.modalities.base_modality import Modality
 from bioagent.constants import IGNORE_INDEX
 from bioagent.data_tools import encode_chat, encode_interleaved_data
-import bioagent.data.data_mixture as datasets_mixture
+from bioagent.training import TrainingArguments
+
+_DATASETS = {}
+_MIXTURES = {}
 
 
-@dataclass
-class DataArguments:
-    dataset_path: str = field(
-        default=None, metadata={"help": "Path to the training data."}
-    )
-    data_mixture: str = field(
-        default="pubchem_cap", metadata={"help": "Datasets mixture to use."}
-    )
+def _register_dataset(name, type, data_path):
+    dataset = Dataset(dataset_name=name, dataset_type=type, data_path=data_path)
+    _DATASETS[name] = dataset
 
 
-def _resolve_dataset(path: str) -> HFDataset:
+def _register_mixture(mixture_name, dataset_names):
+    if all(name in _DATASETS for name in dataset_names):
+        _MIXTURES[mixture_name] = [_DATASETS[name] for name in dataset_names]
+    else:
+        raise ValueError("One or more dataset names provided do not exist in the dataset registry.")
+
+
+def _resolve_dataset(path: str, split: str) -> HFDataset:
     if os.path.exists(path):
         return load_from_disk(path)
     else:
-        return load_dataset(path, split="train", data_files="*.arrow")
+        try:
+            return load_dataset(path, split=split)
+        except:
+            raise FileNotFoundError(f"Dataset not found at path: {path} for split: {split}")
+
+
+def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
+                                training_args: TrainingArguments,
+                                modalities: List[Modality],
+                                ) -> Dict:
+    if training_args.dataset_name is not None:
+        print(f"Using dataset: {training_args.dataset_name}")
+        assert training_args.dataset_name in _DATASETS, f"Dataset {training_args.dataset_name} not found in registry."
+        dataset = _DATASETS[training_args.dataset_name]
+        train_dataset = _resolve_dataset(dataset.data_path, split="train")
+        eval_dataset = _resolve_dataset(dataset.eval_data_path, split="eval") if dataset.eval_data_path is not None else None
+    elif training_args.dataset_mixture is not None:
+        print(f"Using dataset mixture: {training_args.dataset_mixture}")
+        assert training_args.dataset_mixture in _MIXTURES, f"Dataset mixture {training_args.dataset_mixture} not found in registry."
+        mixture = _MIXTURES[training_args.dataset_mixture]
+        train_datasets = []
+        eval_datasets = []
+        for data_args in mixture:
+            dataset_cls = _CLS_MAPPING[data_args.dataset_type]
+            train_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train"))
+            if training_args.eval_dataset_path is not None:
+                eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
+        train_dataset = LMMConcatDataset(train_datasets)
+        eval_dataset = LMMConcatDataset(eval_datasets)
+    data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
+    print(f"Train dataset length: {len(train_dataset)}")
+    if eval_dataset is not None:
+        print(f"Eval dataset length: {len(eval_dataset)}")
+    return dict(train_dataset=train_dataset, eval_dataset=eval_dataset, data_collator=data_collator)
+
+
+class DatasetType(Enum):
+    CHAT = "chat"
+    INTERLEAVED = "interleaved"
+
+
+@dataclass
+class Dataset:
+    dataset_name: str
+    dataset_type: str = field(default=DatasetType.CHAT)
+    data_path: str = field(
+        default=None, metadata={"help": "Path to the training data."}
+    )
+    eval_data_path: str = field(
+        default=None, metadata={"help": "Path to the evaluation data."}
+    )
 
 
 class LMMDataset(Dataset):
     def __init__(
         self,
-        data_args: DataArguments,
+        data_args: Dataset,
         tokenizer: transformers.PreTrainedTokenizer,
         modalities: List[Modality],
+        split: str
     ):
         super(LMMDataset, self).__init__()
-        self.dataset = _resolve_dataset(data_args.dataset_path)
+
+        self.dataset = _resolve_dataset(data_args.dataset_path if split == "train" else data_args.eval_dataset_path, split)
         self.tokenizer = tokenizer
         self.modalities = modalities
 
@@ -59,7 +134,7 @@ class LMMDataset(Dataset):
                 new_i = 0
             logging.error(f"Error encoding chat: {e} index={i} trying index={new_i}")
             return self.__getitem__(new_i)
-        
+
 
 class LMMInterleavedDataset(LMMDataset):
     r"""
@@ -76,7 +151,7 @@ class LMMInterleavedDataset(LMMDataset):
                 new_i = 0
             logging.error(f"Error encoding chat: {e} index={i} trying index={new_i}")
             return self.__getitem__(new_i)
-        
+
 
 class LMMConcatDataset(ConcatDataset):
     def get_example(self) -> Dict:
@@ -106,41 +181,33 @@ class DataCollatorForSupervisedLMMDataset:
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-        # (modality, batch_size, instance_idx, x/edge_index/edge_attr)
         for m in self.modalities:
             batch[m.name] = [instance[m.name] for instance in instances]
 
         return batch
 
 
-def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
-                                data_args: DataArguments,
-                                modalities: List[Modality],
-                                ) -> Dict:
-    """Make dataset and collator for supervised fine-tuning.
-    This function is originally implemented by the LLaVA team and 
-    modified by Jason Lu and Haotian Tang."""
-    all_datasets = []
-    extra_info = []
-    datasets_mixture.register_datasets_mixtures()
-    mixture = datasets_mixture.DATASETS_MIXTURES[data_args.data_mixture]
-    for dataset in mixture:
-        dataset_type = dataset.dataset_type
-        if os.path.exists(dataset.data_path):
-            data_args.dataset_path = dataset.data_path
-        if dataset_type == "cap":
-            dataset_cls = LMMDataset
-        elif dataset_type == "interleaved":
-            dataset_cls = LMMInterleavedDataset
-        else:
-            raise NotImplementedError
-        train_dataset = dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args,)
-        all_datasets.append(train_dataset)
-        extra_info.append(len(train_dataset))
-    
-    all_datasets = LMMConcatDataset(all_datasets)
+_CLS_MAPPING = {DatasetType.CHAT: LMMDataset, DatasetType.INTERLEAVED: LMMInterleavedDataset}
 
-    data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
-    return dict(train_dataset=all_datasets,
-                eval_dataset=None,
-                data_collator=data_collator)
+
+# Register datasets
+_register_dataset(
+    name="pubchem_cap",
+    type=DatasetType.CHAT,
+    data_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1",
+    eval_path=None
+)
+
+_register_dataset(
+    name="uspto_rxn",
+    type=DatasetType.INTERLEAVED,
+    data_path="/cto_labs/AIDD/DATA/React/USPTO/Interleaved",
+    eval_path=None
+)
+
+
+# Register a mixture of datasets
+_register_mixture(
+    mixture_name = "chem_rxn_mixture",
+    dataset_names = ["pubchem_cap", "uspto_rxn"],
+)
