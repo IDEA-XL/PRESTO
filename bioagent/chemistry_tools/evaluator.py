@@ -111,8 +111,10 @@ class MoleculeSMILESEvaluator(Evaluator):
 
             for metric in metrics:
                 if metric == "bleu" and pred and gt:
-                    results[metric][0].append([gt])
-                    results[metric][1].append(pred)
+                    gt_tokens = [c for c in gt]
+                    pred_tokens = [c for c in pred]
+                    results[metric][0].append([gt_tokens])
+                    results[metric][1].append(pred_tokens)
                 elif pred is None or gt is None:
                     results[metric].append(0)
                     continue
@@ -136,6 +138,99 @@ class MoleculeSMILESEvaluator(Evaluator):
 
         return results
 
+
+class MoleculeSEELFIESEvaluator(Evaluator):
+    """
+    If input is SMILES, convert to SELFIES then evaluate. Ensure `encode_smiles`=True
+    """
+    _metric_functions = {
+        "levenshtein": lev,
+        "exact_match": exact_match,
+        "bleu": corpus_bleu,
+        "validity": lambda selfies: selfies is not None,
+        "maccs_sims": maccs_similarity,
+        "morgan_sims": morgan_similarity,
+        "rdk_sims": rdk_similarity
+    }
+
+    @staticmethod
+    def sf2smi(selfies):
+        try:
+            smiles = sf.decoder(selfies)
+            return smiles
+        except Exception:
+            return None
+    
+    @staticmethod
+    def smi2sf(smiles):
+        try:
+            selfies = sf.encoder(smiles)
+            return selfies
+        except Exception:
+            return None
+
+    @staticmethod
+    def convert_to_canonical_smiles(smiles):
+        if not smiles:
+            return None
+        molecule = Chem.MolFromSmiles(smiles)
+        if molecule is not None:
+            canonical_smiles = Chem.MolToSmiles(molecule, isomericSmiles=False, canonical=True)
+            return canonical_smiles
+        else:
+            return None
+
+    def build_evaluate_tuple(self, pred, gt, encode_smiles):
+        if encode_smiles:
+            pred_smi = self.convert_to_canonical_smiles(pred)
+            gt_smi = self.convert_to_canonical_smiles(gt)
+            pred_sf = self.smi2sf(pred_smi)
+            gt_sf = self.smi2sf(gt_smi)
+        else:
+            pred_sf = pred
+            gt_sf = gt
+        return pred_sf, gt_sf
+
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, encode_smiles=True):
+            
+        if metrics is None:
+            metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
+
+        results = {metric: [] for metric in metrics}
+        if "bleu" in metrics:
+            results["bleu"] = [[], []]
+
+        for pred, gt in zip(predictions, references):
+            pred, gt = self.build_evaluate_tuple(pred, gt, encode_smiles=encode_smiles)
+
+            for metric in metrics:
+                if metric == "bleu" and pred and gt:
+                    gt_tokens = [c for c in gt]
+                    pred_tokens = [c for c in pred]
+                    results[metric][0].append([gt_tokens])
+                    results[metric][1].append(pred_tokens)
+                elif pred is None or gt is None:
+                    results[metric].append(0)
+                    continue
+                elif metric == "validity":
+                    results[metric].append(self._metric_functions[metric](pred))
+                elif metric in ["maccs_sims", "morgan_sims", "rdk_sims"]:
+                    results[metric].append(self._metric_functions[metric](Chem.MolFromSmiles(pred), Chem.MolFromSmiles(gt)))
+                else:
+                    results[metric].append(self._metric_functions[metric](pred, gt))
+
+        if "bleu" in metrics:
+            if results["bleu"][0] and results["bleu"][1]:
+                results["bleu"] = corpus_bleu(results["bleu"][0], results["bleu"][1])
+            else:
+                results["bleu"] = 0
+
+        if verbose:
+            print("Evaluation results:")
+            for metric, values in results.items():
+                print(f"{metric}: {np.mean(values)}")
+
+        return results
 
 class MoleculeCaptionEvaluator(Evaluator):
     _metric_functions = {
