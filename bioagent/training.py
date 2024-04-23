@@ -119,6 +119,7 @@ class ModelArguments:
     model_cls: str = field(default="MistralLMMForCausalLM")
     modality_builder: str = field(default="vision_clip")
     model_lora_path: Optional[str] = field(default=None)
+    projectors_path: Optional[str] = field(default=None)
 
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,

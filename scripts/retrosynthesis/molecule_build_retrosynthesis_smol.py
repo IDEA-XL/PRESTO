@@ -98,7 +98,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
     selfies_list, smiles_list, molecules = process_reaction_equation(input, format, token)
     _, _, output = process_reaction_equation(output, format, False)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
+    input_template = prompt_template["input"].replace("<INPUT>", molecules)
     output_template = prompt_template["output"].replace("<OUTPUT>", output)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
@@ -124,7 +124,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
 def conversation_test(id, input, output, few_shots: list = None, format = "smiles", token=True):
     selfies, smiles, molecules = process_reaction_equation(input, format, token)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
+    input_template = prompt_template["input"].replace("<INPUT>", molecules)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
     if not few_shots:

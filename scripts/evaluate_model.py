@@ -9,7 +9,7 @@ import torch
 import tqdm
 
 from bioagent.training import ModelArguments
-from bioagent.inference import load_trained_lora_model
+from bioagent.inference import load_trained_lora_model, load_trained_model
 from bioagent.data_tools import encode_chat, parse_chat_output
 from bioagent.chemistry_tools import EVALUATOR_BUILDERS
 
@@ -19,6 +19,7 @@ class EvaluationArguments(ModelArguments):
     dataset_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
     )
+    lora_enable: bool = field(default=True, metadata={"help": "Enable LoRA."})
     max_new_tokens: int = field(default=2048, metadata={"help": "Maximum number of new tokens to generate."})
     temperature: float = field(default=0.2, metadata={"help": "Temperature to use for sampling."})
     top_k: int = field(default=50, metadata={"help": "Top k to use for sampling."})
@@ -53,7 +54,7 @@ def _resolve_dataset(path: str) -> HFDataset:
     if os.path.exists(path):
         return load_from_disk(path)
     else:
-        return load_dataset(path, split="train", data_files="*.arrow")
+        return load_dataset(path, split="test", data_files="*.arrow")
 
 
 def _evaluate(model, tokenizer, dataset, args):
@@ -112,11 +113,18 @@ if __name__ == "__main__":
     parser = transformers.HfArgumentParser((EvaluationArguments,))
     eval_args, _ = parser.parse_args_into_dataclasses(return_remaining_strings=True)
 
-    model, tokenizer = load_trained_lora_model(
-        model_name_or_path=eval_args.model_name_or_path,
-        model_lora_path=eval_args.model_lora_path,
-        load_bits=eval_args.load_bits,
-    )
+    if eval_args.lora_enable:
+        model, tokenizer = load_trained_lora_model(
+            model_name_or_path=eval_args.model_name_or_path,
+            model_lora_path=eval_args.model_lora_path,
+            load_bits=eval_args.load_bits,
+        )
+    else:
+        model, tokenizer = load_trained_model(
+            model_name_or_path=eval_args.model_name_or_path,
+            pretrained_projectors_path=eval_args.pretrained_projectors_path,
+            load_bits=eval_args.load_bits,
+        )
 
     dataset = _resolve_dataset(eval_args.dataset_path) 
     score = _evaluate(model, tokenizer, dataset, eval_args)

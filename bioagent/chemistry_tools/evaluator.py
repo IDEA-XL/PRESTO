@@ -88,12 +88,16 @@ class MoleculeSMILESEvaluator(Evaluator):
         else:
             return None
 
-    def build_evaluate_tuple(self, pred, gt):
-        pred_smi = self.sf_encode(pred)
-        gt_smi = self.sf_encode(gt)
+    def build_evaluate_tuple(self, pred, gt, decode_selfies):
+        if decode_selfies:
+            pred_smi = self.sf_encode(pred)
+            gt_smi = self.sf_encode(gt)
+        else:
+            pred_smi = pred
+            gt_smi = gt
         return self.convert_to_canonical_smiles(pred_smi), self.convert_to_canonical_smiles(gt_smi)
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, decode_selfies=False):
             
         if metrics is None:
             metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
@@ -103,7 +107,7 @@ class MoleculeSMILESEvaluator(Evaluator):
             results["bleu"] = [[], []]
 
         for pred, gt in zip(predictions, references):
-            pred, gt = self.build_evaluate_tuple(pred, gt)
+            pred, gt = self.build_evaluate_tuple(pred, gt, decode_selfies=decode_selfies)
 
             for metric in metrics:
                 if metric == "bleu" and pred and gt:
