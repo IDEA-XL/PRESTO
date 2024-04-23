@@ -12,7 +12,7 @@ import transformers
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import Trainer, TrainerCallback
 
-from bioagent.data import (
+from bioagent.dataset import (
     make_supervised_data_module,
 )
 from bioagent.model_utils import (
@@ -46,7 +46,7 @@ These are weights for a version of `{base_model}` finetuned for multimodal appli
 
 ### Usage
 
-GitHub: https://github.com/sshh12/bioagent (includes training scripts and basic inference server)
+GitHub: https://github.com/open-mol/bioagent (includes training scripts and basic inference server)
 
 ### Dataset
 
