@@ -13,7 +13,6 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import Trainer, TrainerCallback
 
 from bioagent.data import (
-    DataArguments,
     make_supervised_data_module,
 )
 from bioagent.model_utils import (
@@ -84,6 +83,12 @@ class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
     remove_unused_columns: bool = field(default=False)
     optim: str = field(default="adamw_torch")
+    dataset_name: str = field(
+        default=None, metadata={"help": "Single dataset to use."}
+    )
+    data_mixture: str = field(
+        default=None, metadata={"help": "Datasets mixture to use."}
+    )
     model_max_length: int = field(
         default=512,
         metadata={
@@ -195,7 +200,6 @@ def train_for_modalities(
     model_cls,
     training_args: TrainingArguments,
     model_args: ModelArguments,
-    data_args: DataArguments,
     modalities: List[Modality],
 ):
     global local_rank
@@ -216,7 +220,7 @@ def train_for_modalities(
     )
     fix_tokenizer(tokenizer)
 
-    data_module = make_supervised_data_module(tokenizer, data_args, modalities)
+    data_module = make_supervised_data_module(tokenizer, training_args, modalities)
 
     model = model_cls.from_pretrained(
         model_args.model_name_or_path,
@@ -280,7 +284,7 @@ def train_for_modalities(
         dataset = data_module["train_dataset"]
         readme_text = README_TEMPLATE.format(
             base_model=model_args.model_name_or_path,
-            dataset=data_args.dataset_path,
+            dataset=training_args.data_mixture,
             dataset_example=repr(dataset.get_example()),
             num_examples=len(dataset),
             modalities="\n".join(modalities_text),
