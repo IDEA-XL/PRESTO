@@ -122,7 +122,7 @@ if __name__ == "__main__":
     else:
         model, tokenizer = load_trained_model(
             model_name_or_path=eval_args.model_name_or_path,
-            pretrained_projectors_path=eval_args.pretrained_projectors_path,
+            pretrained_projectors_path=eval_args.projectors_path,
             load_bits=eval_args.load_bits,
         )
 

@@ -5,7 +5,7 @@ import torch
 from bioagent.modalities import MODALITY_BUILDERS
 from bioagent.model_utils import fix_tokenizer
 from bioagent.data import (
-    DataArguments, 
+    Dataset, 
     LMMDataset, 
     DataCollatorForSupervisedLMMDataset, 
     LMMInterleavedDataset,
@@ -20,9 +20,9 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_max_length = 2048
     
-    data_args = DataArguments(
+    data_args = Dataset(
         # dataset_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1",
-        data_mixture="sft",
+        dataset_path="/cto_labs/AIDD/DATA/React/USPTO/Interleaved",
     )   
     llama_path = "checkpoints/vicuna-7b-v1.5"
     

@@ -4,14 +4,18 @@ from functools import partial
 
 from Levenshtein import distance as lev
 import numpy as np
-from nltk.translate.bleu_score import corpus_bleu
+import nltk
+from nltk import word_tokenize
+from nltk.translate.bleu_score import corpus_bleu, sentence_bleu
 from nltk.translate.meteor_score import meteor_score
 from rouge_score import rouge_scorer
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import MACCSkeys, AllChem
 import selfies as sf
+from sklearn.metrics import accuracy_score, f1_score, mean_squared_error, mean_absolute_error, r2_score
 
 RDLogger.DisableLog('rdApp.*')
+nltk.download('wordnet')
 
 
 def exact_match(ot_smi, gt_smi):
@@ -56,6 +60,62 @@ class Evaluator(ABC):
     @abstractmethod
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
         pass
+
+
+class ClassificationEvaluator(Evaluator):
+    _metric_functions = {
+        "accuracy": accuracy_score,
+        "f1_score": f1_score
+    }
+
+    def build_evaluate_tuple(self, pred, gt):
+        return pred, gt
+
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+        if metrics is None:
+            metrics = ["accuracy", "f1_score"]
+
+        results = {metric: [] for metric in metrics}
+
+        pred, gt = self.build_evaluate_tuple(predictions, references)
+
+        for metric in metrics:
+            results[metric].append(self._metric_functions[metric](gt, pred))
+
+        if verbose:
+            print("Evaluation results:")
+            for metric, values in results.items():
+                print(f"{metric}: {np.mean(values)}")
+
+        return results
+
+
+class RegressionEvaluator(Evaluator):
+    _metric_functions = {
+        "mse": mean_squared_error,
+        "mae": mean_absolute_error,
+        "r2": r2_score
+    }
+
+    def build_evaluate_tuple(self, pred, gt):
+        return pred, gt
+
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+        if metrics is None:
+            metrics = ["mse", "mae", "r2"]
+
+        results = {metric: [] for metric in metrics}
+        gt, pred = self.build_evaluate_tuple(predictions, references) 
+
+        for metric in metrics:
+            results[metric].append(self._metric_functions[metric](gt, pred))
+
+        if verbose:
+            print("Evaluation results:")
+            for metric, values in results.items():
+                print(f"{metric}: {np.mean(values)}")
+
+        return results
 
 
 class MoleculeSMILESEvaluator(Evaluator):
@@ -189,7 +249,9 @@ class MoleculeSEELFIESEvaluator(Evaluator):
         else:
             pred_sf = pred
             gt_sf = gt
-        return pred_sf, gt_sf
+            pred_smi = pred
+            gt_smi = gt
+        return pred_sf, gt_sf, pred_smi, gt_smi
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, encode_smiles=True):
             
@@ -201,7 +263,7 @@ class MoleculeSEELFIESEvaluator(Evaluator):
             results["bleu"] = [[], []]
 
         for pred, gt in zip(predictions, references):
-            pred, gt = self.build_evaluate_tuple(pred, gt, encode_smiles=encode_smiles)
+            pred, gt, pred_smi, gt_smi = self.build_evaluate_tuple(pred, gt, encode_smiles=encode_smiles)
 
             for metric in metrics:
                 if metric == "bleu" and pred and gt:
@@ -215,9 +277,9 @@ class MoleculeSEELFIESEvaluator(Evaluator):
                 elif metric == "validity":
                     results[metric].append(self._metric_functions[metric](pred))
                 elif metric in ["maccs_sims", "morgan_sims", "rdk_sims"]:
-                    results[metric].append(self._metric_functions[metric](Chem.MolFromSmiles(pred), Chem.MolFromSmiles(gt)))
+                    results[metric].append(self._metric_functions[metric](Chem.MolFromSmiles(pred_smi), Chem.MolFromSmiles(gt_smi)))
                 else:
-                    results[metric].append(self._metric_functions[metric](pred, gt))
+                    results[metric].append(self._metric_functions[metric](pred_smi, gt_smi))
 
         if "bleu" in metrics:
             if results["bleu"][0] and results["bleu"][1]:
@@ -234,11 +296,8 @@ class MoleculeSEELFIESEvaluator(Evaluator):
 
 class MoleculeCaptionEvaluator(Evaluator):
     _metric_functions = {
-        "bleu-2": partial(corpus_bleu, weights=(0.5, 0.5)),
-        "bleu-4": partial(corpus_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
-        "rouge-1": rouge_scorer.RougeScorer(['rouge1']).score,
-        "rouge-2": rouge_scorer.RougeScorer(['rouge2']).score,
-        "rouge-l": rouge_scorer.RougeScorer(['rougeL']).score,
+        "bleu-2": partial(sentence_bleu, weights=(0.5, 0.5)),
+        "bleu-4": partial(sentence_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
         "meteor": meteor_score,
     }
 
@@ -247,7 +306,7 @@ class MoleculeCaptionEvaluator(Evaluator):
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
         if metrics is None:
-            metrics = ["bleu-2", "bleu-4", "meteor", "rouge-1", "rouge-2", "rouge-l"]
+            metrics = ["bleu-2", "bleu-4", "meteor", "rouge-1", "rouge-2", "rouge-L"]
 
         results = {metric: [] for metric in metrics}
 
@@ -255,7 +314,17 @@ class MoleculeCaptionEvaluator(Evaluator):
             pred, gt = self.build_evaluate_tuple(pred, gt)
 
             for metric in metrics:
-                results[metric].append(self._metric_functions[metric]([gt], pred))
+                if metric in ["bleu-2", "bleu-4"]:
+                    results[metric].append(self._metric_functions[metric]([gt], pred))
+                elif metric == "meteor":
+                    results[metric].append(self._metric_functions[metric]([word_tokenize(gt)], word_tokenize(pred)))
+                elif metric.startswith("rouge"):
+                    scores = self.rouge_scorer.score(gt, pred)
+                    rouge_variant = metric.split("-")[-1]
+                    score = scores['rouge' + rouge_variant].fmeasure
+                    results[metric].append(score)
+                else:
+                    raise ValueError(f"Unsupported metric: {metric}")
 
         if verbose:
             print("Evaluation results:")
