@@ -10,3 +10,4 @@ deepspeed
 rdkit>=2021.03.5
 selfies>=1.0.0
 wandb
+sklearn

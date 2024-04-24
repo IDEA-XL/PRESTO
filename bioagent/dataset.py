@@ -29,14 +29,13 @@ import torch
 from bioagent.modalities.base_modality import Modality
 from bioagent.constants import IGNORE_INDEX
 from bioagent.data_tools import encode_chat, encode_interleaved_data
-from bioagent.training import TrainingArguments
 
 _DATASETS = {}
 _MIXTURES = {}
 
 
-def _register_dataset(name, type, data_path):
-    dataset = Dataset(dataset_name=name, dataset_type=type, data_path=data_path)
+def _register_dataset(name, type, data_path, eval_path=None):
+    dataset = Dataset(dataset_name=name, dataset_type=type, data_path=data_path, eval_path=eval_path)
     _DATASETS[name] = dataset
 
 
@@ -58,7 +57,7 @@ def _resolve_dataset(path: str, split: str) -> HFDataset:
 
 
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
-                                training_args: TrainingArguments,
+                                training_args: transformers.TrainingArguments,
                                 modalities: List[Modality],
                                 ) -> Dict:
     if training_args.dataset_name is not None:
@@ -66,7 +65,7 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
         assert training_args.dataset_name in _DATASETS, f"Dataset {training_args.dataset_name} not found in registry."
         dataset = _DATASETS[training_args.dataset_name]
         train_dataset = _resolve_dataset(dataset.data_path, split="train")
-        eval_dataset = _resolve_dataset(dataset.eval_data_path, split="eval") if dataset.eval_data_path is not None else None
+        eval_dataset = _resolve_dataset(dataset.eval_path, split="eval") if dataset.eval_path is not None else None
     elif training_args.dataset_mixture is not None:
         print(f"Using dataset mixture: {training_args.dataset_mixture}")
         assert training_args.dataset_mixture in _MIXTURES, f"Dataset mixture {training_args.dataset_mixture} not found in registry."
@@ -76,7 +75,7 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
         for data_args in mixture:
             dataset_cls = _CLS_MAPPING[data_args.dataset_type]
             train_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train"))
-            if training_args.eval_dataset_path is not None:
+            if training_args.eval_path is not None:
                 eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
         train_dataset = LMMConcatDataset(train_datasets)
         eval_dataset = LMMConcatDataset(eval_datasets)
@@ -99,7 +98,7 @@ class Dataset:
     data_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
     )
-    eval_data_path: str = field(
+    eval_path: str = field(
         default=None, metadata={"help": "Path to the evaluation data."}
     )
 
@@ -114,7 +113,7 @@ class LMMDataset(Dataset):
     ):
         super(LMMDataset, self).__init__()
 
-        self.dataset = _resolve_dataset(data_args.dataset_path if split == "train" else data_args.eval_dataset_path, split)
+        self.dataset = _resolve_dataset(data_args.data_path if split == "train" else data_args.eval_path, split)
         self.tokenizer = tokenizer
         self.modalities = modalities
 
