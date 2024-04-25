@@ -88,6 +88,19 @@ def parse_chat_output(output: str, style: str = "base") -> Dict:
             thoughts = None
         output = re.search(pattern_output, output).group(1).strip()
         return {"output": output, "thoughts": thoughts}
+    elif style == "classification":
+        # extract int from output
+        thoughts = None # temporarily set to None
+        output = int(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
+    elif style == "regression":
+        # extract float from output
+        thoughts = None # temporarily set to None
+        try:
+            output = float(re.search(r"\d+\.\d+", output).group())
+        except:
+            output = float(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
     else:
         raise ValueError(f"Invalid style: {style}")
     

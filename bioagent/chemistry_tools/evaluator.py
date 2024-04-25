@@ -69,7 +69,15 @@ class ClassificationEvaluator(Evaluator):
     }
 
     def build_evaluate_tuple(self, pred, gt):
-        return pred, gt
+        if isinstance(pred, str):
+            pred = int(pred)
+        elif isinstance(pred, List) and isinstance(pred[0], str):
+            pred = int(pred[0])
+        if isinstance(gt, str):
+            gt = int(gt)
+        elif isinstance(gt, List) and isinstance(gt[0], str):
+            gt = int(gt[0])
+        return [pred], [gt]
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
         if metrics is None:
@@ -98,7 +106,15 @@ class RegressionEvaluator(Evaluator):
     }
 
     def build_evaluate_tuple(self, pred, gt):
-        return pred, gt
+        if isinstance(pred, str):
+            pred = float(pred)
+        elif isinstance(pred, List) and isinstance(pred[0], str):
+            pred = float(pred[0])
+        if isinstance(gt, str):
+            gt = float(gt)
+        elif isinstance(gt, List) and isinstance(gt[0], str):
+            gt = float(gt[0])
+        return [pred], [gt]
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
         if metrics is None:

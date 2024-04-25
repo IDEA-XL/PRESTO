@@ -89,6 +89,9 @@ class TrainingArguments(transformers.TrainingArguments):
     data_mixture: str = field(
         default=None, metadata={"help": "Datasets mixture to use."}
     )
+    eval_path: Optional[str] = field(
+        default=None, metadata={"help": "Path to the evaluation data."}
+    )
     model_max_length: int = field(
         default=512,
         metadata={

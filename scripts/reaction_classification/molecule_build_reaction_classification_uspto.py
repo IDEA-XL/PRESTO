@@ -94,7 +94,7 @@ def conversation_test(id, instruction, input, output, few_shots: list = None, fo
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
-        "ground_truth": output,
+        "ground_truth": str(output),
         "messages": [
             {
                 "role": ROLE_SYSTEM,

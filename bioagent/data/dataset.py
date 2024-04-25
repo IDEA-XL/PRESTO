@@ -22,7 +22,8 @@ import os
 
 import transformers
 import torch
-from torch.utils.data import Dataset, ConcatDataset
+from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import  ConcatDataset
 from datasets import load_from_disk, load_dataset, Dataset as HFDataset
 
 from bioagent.modalities.base_modality import Modality
@@ -33,6 +34,11 @@ _DATASETS = {}
 _MIXTURES = {}
 DATASET_BASE_DIR="/cto_labs/AIDD/DATA/React/InstructChemReact/"
 
+@dataclass
+class DataArguments:
+    dataset_path: str = field(
+        default=None, metadata={"help": "Path to the training data. (Will be deprecated in future versions)"}
+    )
 
 def _register_dataset(name, type, data_path, eval_path=None):
     dataset = Dataset(dataset_name=name, dataset_type=type, data_path=data_path, eval_path=eval_path)
@@ -66,10 +72,10 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
         dataset = _DATASETS[training_args.dataset_name]
         train_dataset = _resolve_dataset(dataset.data_path, split="train")
         eval_dataset = _resolve_dataset(dataset.eval_path, split="eval") if dataset.eval_path is not None else None
-    elif training_args.dataset_mixture is not None:
-        print(f"Using dataset mixture: {training_args.dataset_mixture}")
-        assert training_args.dataset_mixture in _MIXTURES, f"Dataset mixture {training_args.dataset_mixture} not found in registry."
-        mixture = _MIXTURES[training_args.dataset_mixture]
+    elif training_args.data_mixture is not None:
+        print(f"Using dataset mixture: {training_args.data_mixture}")
+        assert training_args.data_mixture in _MIXTURES, f"Dataset mixture {training_args.data_mixture} not found in registry."
+        mixture = _MIXTURES[training_args.data_mixture]
         train_datasets = []
         eval_datasets = []
         for data_args in mixture:
@@ -78,7 +84,10 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
             if training_args.eval_path is not None:
                 eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
         train_dataset = LMMConcatDataset(train_datasets)
-        eval_dataset = LMMConcatDataset(eval_datasets)
+        if training_args.eval_path is not None:
+            eval_dataset = LMMConcatDataset(eval_datasets)
+        else:
+            eval_dataset = None
     data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
     print(f"Train dataset length: {len(train_dataset)}")
     if eval_dataset is not None:
@@ -103,7 +112,7 @@ class Dataset:
     )
 
 
-class LMMDataset(Dataset):
+class LMMDataset(TorchDataset):
     def __init__(
         self,
         data_args: Dataset,
@@ -210,7 +219,7 @@ _register_dataset(
 _register_dataset(
     name="yields_regression",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "yields_regression"),
+    data_path=os.path.join(DATASET_BASE_DIR, "yields_regression", "train"),
     eval_path=None,
 )
  
@@ -218,7 +227,7 @@ _register_dataset(
 _register_dataset(
     name="forward_prediction",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "forward_prediction"),
+    data_path=os.path.join(DATASET_BASE_DIR, "forward_prediction", "train"),
     eval_path=None,
 )
 
@@ -226,7 +235,7 @@ _register_dataset(
 _register_dataset(
     name="retrosynthesis",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "retrosynthesis"),
+    data_path=os.path.join(DATASET_BASE_DIR, "retrosynthesis", "train"),
     eval_path=None,
 )
 
@@ -234,7 +243,7 @@ _register_dataset(
 _register_dataset(
     name="reaction_classification",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "reaction_classification"),
+    data_path=os.path.join(DATASET_BASE_DIR, "reaction_classification", "train"),
     eval_path=None,
 )
 
@@ -242,7 +251,7 @@ _register_dataset(
 _register_dataset(
     name="reagent_selection",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "reagent_selection"),
+    data_path=os.path.join(DATASET_BASE_DIR, "reagent_selection", "train"),
     eval_path=None,
 )
 
@@ -250,7 +259,7 @@ _register_dataset(
 _register_dataset(
     name="reagent_prediction",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "reagent_prediction"),
+    data_path=os.path.join(DATASET_BASE_DIR, "reagent_prediction", "train"),
     eval_path=None,
 )
 
@@ -258,7 +267,7 @@ _register_dataset(
 _register_dataset(
     name="solvent_prediction",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "solvent_prediction"),
+    data_path=os.path.join(DATASET_BASE_DIR, "solvent_prediction", "train"),
     eval_path=None,
 )
 
@@ -266,7 +275,7 @@ _register_dataset(
 _register_dataset(
     name="catalyst_prediction",
     type=DatasetType.CHAT,
-    data_path=os.path.join(DATASET_BASE_DIR, "catalyst_prediction"),
+    data_path=os.path.join(DATASET_BASE_DIR, "catalyst_prediction", "train"),
     eval_path=None,
 )
 
@@ -281,6 +290,7 @@ _register_mixture(
     dataset_names = ["uspto_rxn"],
 )
 
-_REGISTER_MIXTURES = {
-    "sft": ["yields_regression", "forward_prediction", "retrosynthesis", "reaction_classification", "reagent_selection", "reagent_prediction", "solvent_prediction", "catalyst_prediction"]
-}
+_register_mixture(
+    mixture_name = "sft",
+    dataset_names = ["yields_regression", "forward_prediction", "retrosynthesis", "reaction_classification", "reagent_selection", "reagent_prediction", "solvent_prediction", "catalyst_prediction"],
+)

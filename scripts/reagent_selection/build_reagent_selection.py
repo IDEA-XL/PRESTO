@@ -88,13 +88,17 @@ def load_dataset(mapping_dict, split, selection_target:str):
                 "role": ROLE_USER,
                 "content": user_query,
             },
-            {
-                "role": ROLE_ASSISTANT,
-                "content": str(row["optimal_index"])
-            }
         ]
+        if split == "train":
+            messages.append(
+                {
+                    "role": ROLE_ASSISTANT,
+                    "content": str(row["optimal_index"])
+                }
+            )
         dataset.append({
             "task": selection_target,
+            "ground_truth": str(row["optimal_index"]),
             "molecules": {"smiles": smiles_list, "selfies": encode_smiles_to_selfies(smiles_list)},
             "messages": messages
         })
