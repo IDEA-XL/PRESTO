@@ -20,55 +20,55 @@ FEW_SHOT_PROMPT = """Here are some examples of name conversion."""
 
 PROMPT_TEMPLATES = [
     {
-        "input": "<INPUT> is the representation of a molecule. What is its molecular formula?",
+        "input": "<INPUT> is the IUPAC name of a molecule. Please give its SMILES representation.",
         "output": "<OUTPUT>"
     },
     {
-        "input": "Convert the representation of a molecule <INPUT> into molecular formula.",
+        "input": "Convert the IUPAC name of a molecule <INPUT> into SMILES representation.",
         "output": "<OUTPUT>"
     },
     {
-        "input": "What is the formula of the molecule <INPUT> ?",
+        "input": "What is the SMILES representation of the molecule with IUPAC name <INPUT> ?",
         "output": "<OUTPUT>"
     },
     {
-        "input": "Can you give the molecular molecular formula of <INPUT> ?",
+        "input": "Can you give the SMILES notation of the molecule <INPUT> ?",
         "output": "Sure. <OUTPUT>"
     },
     {
-        "input": "Please write the molecular formula of the molecule <INPUT> .",
+        "input": "Please write the SMILES representation of the molecule <INPUT> .",
         "output": "<OUTPUT>"
     },
     {
-        "input": "Given the representation <INPUT>, what would be its molecular formula?",
-        "output": "It is <OUTPUT> ."
-    },
-    {
-        "input": "The representation <INPUT> represents a specific molecule. Can you reveal its molecular formula?",
-        "output": "Sure. It's <OUTPUT> ."
-    },
-    {
-        "input": "Considering the code <INPUT>, can you determine the corresponding molecular formula?",
-        "output": "It would be <OUTPUT> ."
-    },
-    {
-        "input": "Can you tell me the molecular formula of <INPUT> ?",
+        "input": "<INPUT> The above is the IUPAC name of a molecule. Write its SMILES notation.",
         "output": "<OUTPUT>"
     },
     {
-        "input": "I'd like to know the molecular formula of <INPUT> . Can you tell me?",
-        "output": "Sure. It's <OUTPUT> ."
+        "input": "The IUPAC name of a certain molecule is <INPUT> . Can you provide its SMILES representation?",
+        "output": "The SMILES representation is <OUTPUT> ."
     },
     {
-        "input": "What is the molecular formula for the molecule denoted by <INPUT> ?",
-        "output": "<OUTPUT>"
+        "input": "Please identify the SMILES representation of the molecule named <INPUT> .",
+        "output": "The molecule's SMILES representation is <OUTPUT> ."
     },
     {
-        "input": "What is the molecular formula of <INPUT> ?",
-        "output": "The molecular formula is <OUTPUT> ."
+        "input": "For the molecule with <INPUT> as the IUPAC name, what is the corresponding SMILES representation?",
+        "output": "The corresponding SMILES representation is <OUTPUT> ."
     },
     {
-        "input": "Please provide the molecular formula for <INPUT> .",
+        "input": "What is the SMILES notation for <INPUT> ?",
+        "output": "It's <OUTPUT> ."
+    },
+    {
+        "input": "Could you provide the SMILES for <INPUT> ?",
+        "output": "Of course. It's <OUTPUT> ."
+    },
+    {
+        "input": "Can you tell me the SMILES representation for the molecule <INPUT> ?",
+        "output": "Sure. <OUTPUT> ."
+    },
+    {
+        "input": "What is the SMILES representation for <INPUT> ?",
         "output": "<OUTPUT>"
     }
 ]
@@ -88,14 +88,13 @@ def process_input(input, format = "smiles", token=True):
     return selfies, smiles, molecule
 
 def conversation_train(id, input, output, format = "smiles", token=True):
-    selfies, smiles, molecule = process_input(input, format, token)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<INPUT>", molecule)
+    input_template = prompt_template["input"].replace("<INPUT>", input) 
     output_template = prompt_template["output"].replace("<OUTPUT>", output)
     
     return {
         "id": id,
-        "molecules": {"selfies": selfies, "smiles": smiles},
+        "molecules": {"selfies": [], "smiles": []},
         "ground_truth": output,
         "messages": [
             {
@@ -114,9 +113,8 @@ def conversation_train(id, input, output, format = "smiles", token=True):
     }
 
 def conversation_test(id, input, output, few_shots: list = None, format = "smiles", token=True):
-    selfies, smiles, molecule = process_input(input, format, token)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<INPUT>", molecule)
+    input_template = prompt_template["input"].replace("<INPUT>", input)
     
     if not few_shots:
         content = input_template
@@ -128,7 +126,7 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         
     return {
         "id": id,
-        "molecules": {"selfies": selfies, "smiles": smiles},
+        "molecules": {"selfies": [], "smiles": []},
         "ground_truth": output,
         "messages": [
             {
@@ -149,9 +147,9 @@ def generate_few_shot_examples(rows, num_examples=5):
 
 def main(args):
     data_files = {
-        "train": os.path.join(args.data_dir, "train/name_conversion-s2f.jsonl"),
-        "dev": os.path.join(args.data_dir, "dev/name_conversion-s2f.jsonl"),
-        "test": os.path.join(args.data_dir, "test/name_conversion-s2f.jsonl")
+        "train": os.path.join(args.data_dir, "train/name_conversion-i2s.jsonl"),
+        "dev": os.path.join(args.data_dir, "dev/name_conversion-i2s.jsonl"),
+        "test": os.path.join(args.data_dir, "test/name_conversion-i2s.jsonl")
     }
     dataset = {
         "train": Dataset.from_json(data_files["train"]),

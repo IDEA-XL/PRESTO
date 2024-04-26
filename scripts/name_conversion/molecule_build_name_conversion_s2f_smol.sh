@@ -8,4 +8,4 @@
 #SBATCH --partition=pi_gerstein
 
 conda activate bioagent
-python molecule_build_name_conversion_s2f_smol.py --data_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/SMolInstruct/raw --out_dir /home/ys792/data/open-mol/SMolInst-NC/s2f_mmchat_smiles
+python molecule_build_name_conversion_s2f_smol.py --data_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/SMolInstruct/raw --repo_id OpenMol/SMol_S2F_270K_SMILES-MMChat --private --num_proc 20
