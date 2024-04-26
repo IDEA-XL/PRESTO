@@ -29,8 +29,8 @@ PRETRAIN_PHRASES = [
    f'Tell me the SMILES of this molecule: {MOLECULE_TOKEN}',
    f'{MOLECULE_TOKEN} What is the SMILES of this molecule?',
    f"I'd like the SMILES of this molecule {MOLECULE_TOKEN}. Can you do that?",
-   f"{MOLECULE_TOKEN} The above is a compound. Could you please tell me the SMILES of it?"
-   f"{MOLECULE_TOKEN} The above is a compound. What is the corresponding SMILES representation?"
+   f"{MOLECULE_TOKEN} The above is a compound. Could you please tell me the SMILES of it?",
+   f"{MOLECULE_TOKEN} The above is a compound. What is the corresponding SMILES representation?",
 ]
 
 
