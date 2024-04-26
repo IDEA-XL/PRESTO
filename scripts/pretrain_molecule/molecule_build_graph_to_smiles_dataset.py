@@ -1,5 +1,5 @@
 """
-Prepare pretrain dataset for stage-1 (caption dataset).
+Prepare pretrain dataset for stage-1 (graph to smiles).
 Convert to huggingface dataset format.
 """
 
