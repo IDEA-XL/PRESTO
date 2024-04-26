@@ -33,7 +33,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Can you give the IUPAC name of the molecule <INPUT> ?",
-        "output": "Sure. <OUTPUT>"
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please write the IUPAC name of the molecule <INPUT> .",
@@ -53,7 +53,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Determine the IUPAC name for the molecule denoted by <INPUT> .",
-        "output": "The IUPAC name for the denoted molecule is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Translate the given SMILES formula of a molecule <INPUT> into its IUPAC name.",

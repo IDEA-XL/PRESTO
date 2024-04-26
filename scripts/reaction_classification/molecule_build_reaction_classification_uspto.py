@@ -140,6 +140,8 @@ def main(args):
 
     dataset_dict = DatasetDict(dataset_dict)
     dataset_dict.push_to_hub(args.repo_id, private=args.private)
+    if args.output_dir:
+        dataset_dict.save_to_disk(args.output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -148,7 +150,9 @@ if __name__ == "__main__":
     parser.add_argument("--token", type=bool, default=True)
     parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
     parser.add_argument("--repo_id", type=str, required=True, help="Repository ID on the Hugging Face Hub")
+    parser.add_argument("--output_dir", type=str, default=None, help="Output directory to save the dataset")
     parser.add_argument("--private", action="store_true", help="Set to make the dataset private on the Hugging Face Hub")
     args = parser.parse_args()
     main(args)
+
 

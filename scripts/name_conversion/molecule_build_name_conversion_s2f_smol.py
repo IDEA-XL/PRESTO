@@ -33,7 +33,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Can you give the molecular molecular formula of <INPUT> ?",
-        "output": "Sure. <OUTPUT>"
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please write the molecular formula of the molecule <INPUT> .",
@@ -41,15 +41,15 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Given the representation <INPUT>, what would be its molecular formula?",
-        "output": "It is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "The representation <INPUT> represents a specific molecule. Can you reveal its molecular formula?",
-        "output": "Sure. It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Considering the code <INPUT>, can you determine the corresponding molecular formula?",
-        "output": "It would be <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Can you tell me the molecular formula of <INPUT> ?",
@@ -57,7 +57,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "I'd like to know the molecular formula of <INPUT> . Can you tell me?",
-        "output": "Sure. It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "What is the molecular formula for the molecule denoted by <INPUT> ?",
@@ -65,7 +65,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "What is the molecular formula of <INPUT> ?",
-        "output": "The molecular formula is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please provide the molecular formula for <INPUT> .",
