@@ -11,6 +11,7 @@ from bioagent.data import (
     LMMInterleavedDataset,
     make_supervised_data_module,
 )
+from bioagent.training import TrainingArguments
 from tqdm import tqdm
 
 # export CHAT_TEMPLATE_PATH=/cto_labs/AIDD/chat_templates/vicuna.jinja
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_max_length = 2048
     
-    data_args = Dataset(
-        # dataset_path="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1",
-        dataset_path="/cto_labs/AIDD/DATA/React/USPTO/Interleaved",
+    data_args = TrainingArguments(
+        data_mixture="pretrain_v2",
+        output_dir="/tmp/nc",
     )   
     llama_path = "checkpoints/vicuna-7b-v1.5"
     
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     
     # iterate over the dataset
     miss_match = 0
-    for i, batch in enumerate(tqdm(dataset)):
+    for i, sample in enumerate(tqdm(dataset)):
         try:
             pass
         except Exception as e:

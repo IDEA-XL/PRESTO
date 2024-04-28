@@ -279,6 +279,47 @@ _register_dataset(
     eval_path=None,
 )
 
+## name conversion
+# s2f
+_register_dataset(
+    name="s2f",
+    type=DatasetType.CHAT,
+    data_path=os.path.join(DATASET_BASE_DIR, "NC", "s2f_mmchat_smiles", "train"),
+    eval_path=None,
+)
+
+# s2i
+_register_dataset(
+    name="s2i",
+    type=DatasetType.CHAT,
+    data_path=os.path.join(DATASET_BASE_DIR, "NC", "s2i_mmchat_smiles", "train"),
+    eval_path=None,
+)
+
+# i2s (text-only)
+_register_dataset(
+    name="i2s",
+    type=DatasetType.CHAT,
+    data_path=os.path.join(DATASET_BASE_DIR, "NC", "i2s_mmchat_smiles", "train"),
+    eval_path=None,
+)
+
+# i2f (text-only)
+_register_dataset(
+    name="i2f",
+    type=DatasetType.CHAT,
+    data_path=os.path.join(DATASET_BASE_DIR, "NC", "i2f_mmchat_smiles", "train"),
+    eval_path=None,
+)
+
+# g2s (from pubchem)
+_register_dataset(
+    name="g2s",
+    type=DatasetType.CHAT,
+    data_path=os.path.join(DATASET_BASE_DIR, "NC", "g2s_mmchat_smiles",),
+    eval_path=None,
+)
+
 ## Register a mixture of datasets
 _register_mixture(
     mixture_name = "pubchem_cap",
@@ -291,6 +332,26 @@ _register_mixture(
 )
 
 _register_mixture(
+    mixture_name = "pretrain_v2",
+    dataset_names = ["uspto_rxn", "g2s", "s2f", "s2i"],
+)
+
+_register_mixture(
+    mixture_name = "pretrain_v3",
+    dataset_names = ["uspto_rxn", "g2s", "s2f", "s2i", "i2s", "i2f"],
+)
+
+_register_mixture(
     mixture_name = "sft",
     dataset_names = ["yields_regression", "forward_prediction", "retrosynthesis", "reaction_classification", "reagent_selection", "reagent_prediction", "solvent_prediction", "catalyst_prediction"],
+)
+
+_register_mixture(
+    mixture_name = "nc",
+    dataset_names = ["s2f", "s2i", "i2s", "i2f"],
+)
+
+_register_mixture(
+    mixture_name = "text_only",
+    dataset_names = ["i2s", "i2f"],
 )

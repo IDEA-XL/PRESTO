@@ -6,7 +6,7 @@ export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 
 TASK=reagent_prediction
 MODEL_VERSION=vicuna-7b-v1.5
-TRAIN_VERSION="sft-full"
+TRAIN_VERSION="sft-full-skip_stage2"
 EPOCH=$1
 BASE_LLM_PATH="checkpoints/llava-moleculestm-$MODEL_VERSION-$TRAIN_VERSION/epoch-$EPOCH"
 DATA_DIR="/cto_labs/AIDD/DATA/React/InstructChemReact/$TASK/test"
