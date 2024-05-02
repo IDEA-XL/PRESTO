@@ -98,7 +98,8 @@ def load_trained_model(
             bnb_4bit_quant_type="nf4",
         )
     elif load_bits == 16:
-        load_kwargs["torch_dtype"] = torch.float16
+        # load_kwargs["torch_dtype"] = torch.float16
+        load_kwargs["torch_dtype"] = torch.bfloat16
     else:
         raise ValueError(f"Invalid load_bits: {load_bits}")
 

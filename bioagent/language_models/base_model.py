@@ -154,10 +154,13 @@ class LMMMetaForCausalLM(ABC):
         
         # @open-mol flatten the projected_tensors into a single tensor to avoid deepspeed all_reduce() hanging issue
         # why? since if no modality is present, the gradient of projected_tensors is None, which will cause deepspeed all_reduce() hanging issue
-        projected_tensors = torch.stack(
-            [
-                torch.cat([torch.cat(batch, dim=0) for batch in modality], dim=0)
-                for modality in projected_tensors
-            ]
-        )
+        try:
+            projected_tensors = torch.stack(
+                [
+                    torch.cat([torch.cat(batch, dim=0) for batch in modality], dim=0)
+                    for modality in projected_tensors
+                ]
+            )
+        except:
+            projected_tensors = None
         return None, attention_mask, past_key_values, inputs_embeds, labels, projected_tensors

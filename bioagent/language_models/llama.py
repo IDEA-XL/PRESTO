@@ -118,7 +118,8 @@ class LlamaLMMForCausalLM(LlamaForCausalLM, LMMMetaForCausalLM):
             loss = loss_fct(shift_logits, shift_labels)
             # @open-mol: add tricky pseudo project tensor loss ('0') here  
             # to avoid deepspeed all_reduce() hanging issue
-            loss = loss + projected_tensors.mean() * 0
+            if projected_tensors is not None:
+                loss = loss + projected_tensors.mean() * 0
 
         if not return_dict:
             output = (logits,) + outputs[1:]
