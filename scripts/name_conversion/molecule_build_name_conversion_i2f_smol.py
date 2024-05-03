@@ -33,7 +33,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Can you give the molecular formula of the molecule <INPUT> ?",
-        "output": "Sure. <OUTPUT>"
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please write the molecular formula of the molecule <INPUT> .",
@@ -57,7 +57,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Under IUPAC nomenclature, a molecule named <INPUT> is given. What is its corresponding molecular formula?",
-        "output": "Its corresponding molecular formula is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Translate the chemical IUPAC name <INPUT> into its molecular formula.",

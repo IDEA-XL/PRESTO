@@ -34,15 +34,15 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Given the following product, please provide possible reactants. <INPUT>",
-        "output": "Possible reactant(s): <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Do retrosynthesis with the product <INPUT> .",
-        "output": "OK. The reactants may be <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "<INPUT> Given the product provided, propose some possible reactants that could have been employed in its formation.",
-        "output": "Here are possible reactants: <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "To synthesis <INPUT>, what are the possible reactants? Write in the SMILES representation.",
@@ -50,7 +50,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Provide the potential reactants that may be used to produce the product <INPUT> .",
-        "output": "The potential reactants: <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "What reactants could lead to the production of the following product? <INPUT>",
@@ -97,13 +97,14 @@ def conversation_train(id, input, output, format = "smiles", token=True):
     selfies, smiles, molecules = process_reaction_equation(input, format, token)
     _, _, output = process_reaction_equation(output, format, False)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
+    input_template = prompt_template["input"].replace("<INPUT>", molecules)
     output_template = prompt_template["output"].replace("<OUTPUT>", output)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
+        "ground_truth": output,
         "messages": [
             {
                 "role": ROLE_SYSTEM,
@@ -123,7 +124,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
 def conversation_test(id, input, output, few_shots: list = None, format = "smiles", token=True):
     selfies, smiles, molecules = process_reaction_equation(input, format, token)
     prompt_template = random.choice(PROMPT_TEMPLATES)
-    input_template = prompt_template["input"].replace("<MOLECULE>", molecules)
+    input_template = prompt_template["input"].replace("<INPUT>", molecules)
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", "structure" if token else format.upper()).replace("<REP_2>", format.upper())
     
     if not few_shots:
@@ -177,37 +178,26 @@ def main(args):
                 result = conversation_test(id, item['input'], item['output'], generate_few_shot_examples(dataset[split], num_examples=0), format=args.format, token=args.token)
             yield result
 
-    # Create dataset info dictionary
-    dataset_info = {
-        "description": "Retrosynthesis dataset for SMolInstruct",
-        "version": "1.0.0",
-        "license": "Apache-2.0",
-        "splits": {
-            "train": {"num_examples": len(dataset["train"])},
-            "dev": {"num_examples": len(dataset["dev"])},
-            "test": {"num_examples": len(dataset["test"])}
-        }
-    }
-
     dataset_dict = {}
     for split in ["train", "dev", "test"]:
         dataset_split = Dataset.from_generator(gen, gen_kwargs={"split": split}, num_proc=args.num_proc)
         dataset_dict[split] = dataset_split
         print(f"{split} size: {len(dataset_dict[split])}\n{split} example: {dataset_dict[split][0]}")
 
-    dataset_info["features"] = dataset_dict["test"].features
 
-    dataset_dict = DatasetDict(dataset_dict, info=dataset_info)
-    dataset_dict.save_to_disk(args.out_dir)
+    dataset_dict = DatasetDict(dataset_dict)
+    dataset_dict.push_to_hub(args.repo_id, private=args.private)
+    if args.output_dir:
+        dataset_dict.save_to_disk(args.output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
-    parser.add_argument("--out_dir", type=str, required=True)
     parser.add_argument("--num_proc", type=int, default=1)
     parser.add_argument("--token", type=bool, default=True)
     parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
+    parser.add_argument("--repo_id", type=str, required=True, help="Repository ID on the Hugging Face Hub")
+    parser.add_argument("--output_dir", type=str, default=None, help="Output directory to save the dataset")
+    parser.add_argument("--private", action="store_true", help="Set to make the dataset private on the Hugging Face Hub")
     args = parser.parse_args()
     main(args)
-
-# python molecule_build_retrosynthesis_smol.py --data_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/SMolInstruct/raw --out_dir /gpfs/gibbs/pi/gerstein/xt86/bioagent/data/SMolInstruct/retronsynthesis --num_proc 4
