@@ -4,11 +4,11 @@
 export HF_HOME="/cto_labs/AIDD/cache"
 export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 MODEL_VERSION=vicuna-7b-v1.5
-BASE_LLM_PATH="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain_rxn_nc"
+BASE_LLM_PATH="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain_all"
 MODEL_CLS=LlamaLMMForCausalLM
 
 # output path
-SFT_VERSION=full_rxn_nc
+SFT_VERSION=full_all
 OUTPUT_DIR="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-sft-$SFT_VERSION"
 # load stage-1 projector
 PROJECTOR_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"

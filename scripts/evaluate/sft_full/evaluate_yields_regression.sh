@@ -6,8 +6,8 @@ export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 
 TASK=yields_regression
 MODEL_VERSION=vicuna-7b-v1.5
-TRAIN_VERSION="sft-full"
 EPOCH=$1
+TRAIN_VERSION=$2 # e.g. full_all
 BASE_LLM_PATH="checkpoints/llava-moleculestm-$MODEL_VERSION-$TRAIN_VERSION/epoch-$EPOCH"
 DATA_DIR="/cto_labs/AIDD/DATA/React/InstructChemReact/$TASK/test"
 PROJECTOR_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"

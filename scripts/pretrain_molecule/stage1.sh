@@ -8,7 +8,7 @@ MODEL_VERSION=vicuna-7b-v1.5
 BASE_LLM_PATH=checkpoints/$MODEL_VERSION
 MODEL_CLS=LlamaLMMForCausalLM
 DATA_DIR="/cto_labs/AIDD/DATA/MolFM/pubchemsft_desc/stage1"
-OUTPUT_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1"
+OUTPUT_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1"
 
 NUM_GPUS=8
 

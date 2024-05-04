@@ -8,9 +8,9 @@ BASE_LLM_PATH="checkpoints/$MODEL_VERSION"
 MODEL_CLS=LlamaLMMForCausalLM
 
 # output path
-OUTPUT_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-sft-full-skip_stage2"
+OUTPUT_DIR="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-sft-full-skip_stage2"
 # load stage-1 projector
-PROJECTOR_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
+PROJECTOR_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
 
 NUM_GPUS=8
 deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \

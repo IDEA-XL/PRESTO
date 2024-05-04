@@ -3,13 +3,12 @@
 # set as environment variables
 export HF_HOME="/cto_labs/AIDD/cache"
 export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
-MODEL_VERSION=vicuna-7b-v1.5
-BASE_LLM_PATH="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain_rxn_nc"
+MODEL_VERSION=llama-2-7b
+BASE_LLM_PATH="checkpoints/$MODEL_VERSION"
 MODEL_CLS=LlamaLMMForCausalLM
 
 # output path
-SFT_VERSION=full_rxn_nc
-OUTPUT_DIR="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-sft-$SFT_VERSION"
+OUTPUT_DIR="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-sft-full-skip_stage2"
 # load stage-1 projector
 PROJECTOR_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
 
@@ -24,7 +23,7 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --lora_enable False \
     --bf16 True \
     --tf32 True \
-    --num_train_epochs 3 \
+    --num_train_epochs 2 \
     --gradient_checkpointing True \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 4 \
