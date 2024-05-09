@@ -150,9 +150,9 @@ class MoleculeSMILESEvaluator(Evaluator):
 
     def build_evaluate_tuple(self, pred, gt, selfies=False):
         if selfies:
-            pred_smi = self.sf_encode(pred)
-            gt_smi = self.sf_encode(gt)
-        return self.convert_to_canonical_smiles(pred_smi), self.convert_to_canonical_smiles(gt_smi)
+            pred = self.sf_encode(pred)
+            gt = self.sf_encode(gt)
+        return self.convert_to_canonical_smiles(pred), self.convert_to_canonical_smiles(gt)
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, selfies: bool = False):
             

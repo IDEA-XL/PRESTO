@@ -40,7 +40,7 @@ def test_caption_evaluator(predictions, references, bleu_2, bleu_4, meteor, roug
 @pytest.mark.parametrize("predictions, references, exact_match, validity", MOLECULE_EVALUATOR_TEST_CASES)
 def test_molecule_smiles_evaluator(predictions, references, exact_match, validity):
     evaluator = MoleculeSMILESEvaluator()
-    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True)
+    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True, selfies=True)
     assert score["exact_match"][0] == exact_match, f"Expected {exact_match}, but got {score['exact_match'][0]} for exact match"
     assert score["validity"][0] == validity, f"Expected {validity}, but got {score['validity'][0]} for validity"
 
