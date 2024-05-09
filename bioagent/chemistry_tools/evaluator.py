@@ -164,7 +164,7 @@ class MoleculeSMILESEvaluator(Evaluator):
             results["bleu"] = [[], []]
 
         for pred, gt in zip(predictions, references):
-            pred, gt = self.build_evaluate_tuple(pred, gt)
+            pred, gt = self.build_evaluate_tuple(pred, gt, selfies=selfies)
 
             for metric in metrics:
                 if metric == "bleu" and pred and gt:
