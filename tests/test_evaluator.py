@@ -16,10 +16,14 @@ REGRESSION_EVALUATOR_TEST_CASES = [
 ]
 
 MOLECULE_EVALUATOR_TEST_CASES = [
-    (["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], True, True),
-    (["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1]"], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, True),
-    (["Sorry, I don't know."], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, False),
-    ([""], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, False),
+    (["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], True, True, True),
+    (["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1]"], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, True, True),
+    (["Sorry, I don't know."], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, False, True),
+    ([""], ["[C][N][C][=Branch1][C][=O][C][=C][C][=C][C][=N][Ring1][=Branch1]"], False, False, True),
+    (["CCOC(=O)c1ccccc1Br"], ["CCOC(=O)c1ccccc1Br"], True, True, False),
+    ([""], ["CCOC(=O)c1ccccc1Br"], False, False, False),
+    (["Sorry, I don't know."], ["CCOC(=O)c1ccccc1Br"], False, False, False),
+    (["O=C(Cl)CCC(F)(F)F"], ["CCOC(=O)c1ccccc1Br"], False, True, False),
 ]
 
 CAPTION_EVALUATOR_TEST_CASES = [
@@ -37,10 +41,10 @@ def test_caption_evaluator(predictions, references, bleu_2, bleu_4, meteor, roug
     assert np.isclose(score["rouge-L"][0], rouge_l), f"Expected {rouge_l}, but got {score['rouge-L'][0]} for rougeL"
 
 
-@pytest.mark.parametrize("predictions, references, exact_match, validity", MOLECULE_EVALUATOR_TEST_CASES)
-def test_molecule_smiles_evaluator(predictions, references, exact_match, validity):
+@pytest.mark.parametrize("predictions, references, exact_match, validity, selfies", MOLECULE_EVALUATOR_TEST_CASES)
+def test_molecule_smiles_evaluator(predictions, references, exact_match, validity, selfies):
     evaluator = MoleculeSMILESEvaluator()
-    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True, selfies=True)
+    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True, selfies=selfies)
     assert score["exact_match"][0] == exact_match, f"Expected {exact_match}, but got {score['exact_match'][0]} for exact match"
     assert score["validity"][0] == validity, f"Expected {validity}, but got {score['validity'][0]} for validity"
 
