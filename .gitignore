@@ -162,9 +162,6 @@ cython_debug/
 # Wandb
 wandb/
 
-# Jupyter Notebook
-notebooks/
-
 # Log files
 *logs/
 
