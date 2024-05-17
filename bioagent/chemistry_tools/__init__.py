@@ -6,5 +6,5 @@ EVALUATOR_BUILDERS = {
     "smiles": MoleculeSMILESEvaluator,
     "caption": MoleculeCaptionEvaluator,
     "regression": RegressionEvaluator,
-    "classification": ClassificationEvaluator
+    "classification": ClassificationEvaluator,
 }

@@ -58,22 +58,23 @@ class Evaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         pass
 
 
 class ClassificationEvaluator(Evaluator):
     _metric_functions = {
         "accuracy": accuracy_score,
-        "f1_score": f1_score
+        "f1_macro": partial(f1_score, average='macro'),
+        "f1_micro": partial(f1_score, average='micro'),
     }
 
     def build_evaluate_tuple(self, pred, gt):
         return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
-            metrics = ["accuracy", "f1_score"]
+            metrics = ["accuracy", "f1_macro", "f1_micro"]
 
         results = {metric: [] for metric in metrics}
 
@@ -87,8 +88,11 @@ class ClassificationEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
-
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
+    
 
 class RegressionEvaluator(Evaluator):
     _metric_functions = {
@@ -100,7 +104,7 @@ class RegressionEvaluator(Evaluator):
     def build_evaluate_tuple(self, pred, gt):
         return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
             metrics = ["mse", "mae", "r2"]
 
@@ -115,7 +119,10 @@ class RegressionEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
 
 
 class MoleculeSMILESEvaluator(Evaluator):
@@ -154,7 +161,7 @@ class MoleculeSMILESEvaluator(Evaluator):
             gt = self.sf_encode(gt)
         return self.convert_to_canonical_smiles(pred), self.convert_to_canonical_smiles(gt)
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, selfies: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, selfies: bool = False, full_results: bool = False):
             
         if metrics is None:
             metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
@@ -191,7 +198,10 @@ class MoleculeSMILESEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
 
 
 class MoleculeCaptionEvaluator(Evaluator):
@@ -207,7 +217,7 @@ class MoleculeCaptionEvaluator(Evaluator):
     def build_evaluate_tuple(self, pred, gt):
         return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
             metrics = ["bleu-2", "bleu-4", "meteor", "rouge-1", "rouge-2", "rouge-L"]
 
@@ -234,4 +244,7 @@ class MoleculeCaptionEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
