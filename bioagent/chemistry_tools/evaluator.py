@@ -164,7 +164,7 @@ class MoleculeSMILESEvaluator(Evaluator):
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, selfies: bool = False, full_results: bool = False):
             
         if metrics is None:
-            metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
+            metrics = ["exact_match", "bleu", "levenshtein", "rdk_sims", "maccs_sims", "morgan_sims", "validity"]
 
         results = {metric: [] for metric in metrics}
         if "bleu" in metrics:
