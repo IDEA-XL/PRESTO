@@ -127,13 +127,13 @@ class RegressionEvaluator(Evaluator):
 
 class MoleculeSMILESEvaluator(Evaluator):
     _metric_functions = {
-        "levenshtein": lev,
         "exact_match": exact_match,
         "bleu": corpus_bleu,
-        "validity": lambda smiles: smiles is not None,
+        "levenshtein": lev,
+        "rdk_sims": rdk_similarity,
         "maccs_sims": maccs_similarity,
         "morgan_sims": morgan_similarity,
-        "rdk_sims": rdk_similarity
+        "validity": lambda smiles: smiles is not None,
     }
 
     @staticmethod
