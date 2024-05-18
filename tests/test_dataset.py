@@ -20,10 +20,9 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_max_length = 2048
-    
     data_args = TrainingArguments(
-        data_mixture="pretrain_v2",
-        output_dir="/tmp/nc",
+        data_mixture="sft_subset",
+        output_dir="/tmp/sft",
     )   
     llama_path = "checkpoints/vicuna-7b-v1.5"
     

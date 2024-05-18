@@ -121,7 +121,13 @@ def encode_interleaved_data(
     for m in modalities:
         # ensure the item has key like "smiles" or "selfies"
         data_dict[m.name] = m.preprocess_rows([item])[0]
-    
+        
+    # convert the multi-turns "messages" into a single string
+    if "messages" in item and "text" not in item:
+        text_str = ""
+        for turn in item["messages"]:
+            text_str += turn["content"]
+        item["text"] = text_str
     for subpart in re.split(pattern, item["text"]):
         if not subpart:
             continue

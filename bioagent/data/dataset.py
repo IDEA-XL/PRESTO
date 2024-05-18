@@ -23,7 +23,7 @@ import os
 import transformers
 import torch
 from torch.utils.data import Dataset as TorchDataset
-from torch.utils.data import  ConcatDataset
+from torch.utils.data import  ConcatDataset, Subset
 from datasets import load_from_disk, load_dataset, Dataset as HFDataset
 
 from bioagent.modalities.base_modality import Modality
@@ -45,9 +45,12 @@ def _register_dataset(name, type, data_path, eval_path=None):
     _DATASETS[name] = dataset
 
 
-def _register_mixture(mixture_name, dataset_names):
+def _register_mixture(mixture_name, dataset_names: Dict[str, float]):
+    fracs = dataset_names.values()
+    if any(frac < 0 for frac in fracs):
+        raise ValueError("Dataset fractions cannot be negative.")
     if all(name in _DATASETS for name in dataset_names):
-        _MIXTURES[mixture_name] = [_DATASETS[name] for name in dataset_names]
+        _MIXTURES[mixture_name] = [(_DATASETS[name], frac) for name, frac in dataset_names.items()]
     else:
         raise ValueError("One or more dataset names provided do not exist in the dataset registry.")
 
@@ -78,9 +81,11 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
         mixture = _MIXTURES[training_args.data_mixture]
         train_datasets = []
         eval_datasets = []
-        for data_args in mixture:
+        for data_args, frac in mixture:
             dataset_cls = _CLS_MAPPING[data_args.dataset_type]
-            train_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train"))
+            train_dataset = dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train")
+            train_subset = Subset(train_dataset, range(int(len(train_dataset)*frac)))
+            train_datasets.append(train_subset)
             if training_args.eval_path is not None:
                 eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
         train_dataset = LMMConcatDataset(train_datasets)
@@ -323,35 +328,63 @@ _register_dataset(
 ## Register a mixture of datasets
 _register_mixture(
     mixture_name = "pubchem_cap",
-    dataset_names = ["pubchem_cap"],
+    dataset_names = {"pubchem_cap":1.0},
 )
 
 _register_mixture(
     mixture_name = "uspto_rxn_interleaved",
-    dataset_names = ["uspto_rxn"],
+    dataset_names = {"uspto_rxn":1.0},
 )
 
 _register_mixture(
     mixture_name = "pretrain_v2",
-    dataset_names = ["uspto_rxn", "g2s", "s2f", "s2i"],
+    dataset_names = {"uspto_rxn":1.0, "g2s":1.0, "s2f":1.0, "s2i":1.0},
 )
 
 _register_mixture(
     mixture_name = "pretrain_v3",
-    dataset_names = ["uspto_rxn", "g2s", "s2f", "s2i", "i2s", "i2f"],
+    dataset_names = {"uspto_rxn":1.0, "g2s":1.0, "s2f":1.0, "s2i":1.0, "i2s":1.0, "i2f":1.0},
 )
 
 _register_mixture(
     mixture_name = "sft",
-    dataset_names = ["yields_regression", "forward_prediction", "retrosynthesis", "reaction_classification", "reagent_selection", "reagent_prediction", "solvent_prediction", "catalyst_prediction"],
+    dataset_names = {
+        "yields_regression": 1.0,
+        "forward_prediction": 1.0,
+        "retrosynthesis": 1.0,
+        "reaction_classification": 1.0,
+        "reagent_selection": 1.0,
+        "reagent_prediction": 1.0,
+        "solvent_prediction": 1.0,
+        "catalyst_prediction": 1.0,
+    },
+)
+
+_register_mixture(
+    mixture_name = "sft_subset",
+    dataset_names = {
+        "yields_regression": 1.0, # ~9.5k
+        "forward_prediction": 0.1, # ~12k
+        "retrosynthesis": 0.1, # ~12k
+        "reaction_classification": 0.1, # ~54k
+        "reagent_selection": 1.0, # ~4k
+        "reagent_prediction": 0.2, # ~11k
+        "solvent_prediction": 0.2, # ~14k
+        "catalyst_prediction": 1.0, # ~10k
+    },
 )
 
 _register_mixture(
     mixture_name = "nc",
-    dataset_names = ["s2f", "s2i", "i2s", "i2f"],
+    dataset_names = {
+        "s2f": 1.0,
+        "s2i": 1.0,
+        "i2s": 1.0,
+        "i2f": 1.0,
+    },
 )
 
 _register_mixture(
     mixture_name = "text_only",
-    dataset_names = ["i2s", "i2f"],
+    dataset_names = {"i2s": 1.0, "i2f": 1.0},
 )
