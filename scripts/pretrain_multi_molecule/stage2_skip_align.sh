@@ -9,7 +9,7 @@ MODEL_CLS=LlamaLMMForCausalLM
 # data path
 DATA_DIR="/cto_labs/AIDD/DATA/React/USPTO/Interleaved"
 # output path
-OUTPUT_DIR="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain-skip_align"
+OUTPUT_DIR="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain-skip-align"
 
 NUM_GPUS=8
 deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
@@ -17,7 +17,7 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --model_cls $MODEL_CLS \
     --modality_builder molecule_2d \
     --dataset_path $DATA_DIR \
-    --data_mixture "uspto_rxn_interleaved" \
+    --data_mixture "pretrain_v2" \
     --output_dir $OUTPUT_DIR \
     --pretrain_projectors \
     --lora_enable False \
@@ -37,7 +37,7 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
-    --dataloader_num_workers 0 \
+    --dataloader_num_workers 2 \
     --logging_steps 1 \
     --report_to none \
     --deepspeed configs/zero2.json

@@ -120,10 +120,15 @@ def load_trained_model(
     
     # load projector weights
     logging.info(f"Loading projector weights for {[m.name for m in modalities]}")
-    projector_weights = torch.load(pretrained_projectors_path, map_location="cpu")
-    projector_weights = {
-        k: v for k, v in projector_weights.items() if "_lmm_projector" in k
-    }
+    if pretrained_projectors_path and os.path.exists(pretrained_projectors_path):
+        projector_weights = torch.load(pretrained_projectors_path, map_location="cpu")
+        projector_weights = {
+            k: v for k, v in projector_weights.items() if "_lmm_projector" in k
+        }
+    elif not pretrained_projectors_path:
+        projector_weights = {}
+    else:
+        raise FileNotFoundError(f"Projector weights not found at {pretrained_projectors_path}")
     model.get_model().initialize_pretrained_modules(modalities, projector_weights)
 
     # if load_bits == 16:

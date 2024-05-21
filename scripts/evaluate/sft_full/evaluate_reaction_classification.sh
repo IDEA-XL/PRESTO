@@ -8,12 +8,12 @@ TASK=reaction_classification
 MODEL_VERSION=vicuna-7b-v1.5
 EPOCH=$1
 TRAIN_VERSION=$2 # e.g. full_all
-BASE_LLM_PATH="checkpoints/llava-moleculestm-$MODEL_VERSION-$TRAIN_VERSION/epoch-$EPOCH"
+BASE_LLM_PATH="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-$TRAIN_VERSION/epoch-$EPOCH"
 DATA_DIR="/cto_labs/AIDD/DATA/React/InstructChemReact/$TASK/test"
-PROJECTOR_DIR="checkpoints/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
+PROJECTOR_DIR="$BASE_LLM_PATH/non_lora_trainables.bin"
 
 # log path
-LOG_DIR="./logs/full/epoch-$EPOCH/$TASK"
+LOG_DIR="./logs/full/$TASK/$TRAIN_VERSION/epoch-$EPOCH"
 
 python scripts/evaluate_model.py \
     --model_name_or_path $BASE_LLM_PATH \

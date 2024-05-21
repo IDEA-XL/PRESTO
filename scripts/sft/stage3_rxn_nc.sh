@@ -8,19 +8,16 @@ BASE_LLM_PATH="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain_rxn_
 MODEL_CLS=LlamaLMMForCausalLM
 
 # output path
-SFT_VERSION=full_rxn_nc
+SFT_VERSION=rxn_nc_subset
 OUTPUT_DIR="checkpoints/sft/llava-moleculestm-$MODEL_VERSION-sft-$SFT_VERSION"
-# load stage-1 projector
-PROJECTOR_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
 
 NUM_GPUS=8
 deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --model_name_or_path $BASE_LLM_PATH \
     --model_cls $MODEL_CLS \
     --modality_builder molecule_2d \
-    --data_mixture "sft" \
+    --data_mixture "sft_subset" \
     --output_dir $OUTPUT_DIR \
-    --pretrained_projectors_path $PROJECTOR_DIR \
     --lora_enable False \
     --bf16 True \
     --tf32 True \
