@@ -75,34 +75,6 @@ def encode_chat(
     
     data_dict.update({"input_ids": input_ids, "labels": labels})
     return data_dict
-
-
-def parse_chat_output(output: str, style: str = "base") -> Dict:
-    if style == "base":
-        pattern_thoughts = r"Thoughts:(?:\n| )([\s\S]*?)\n"
-        pattern_output = r"Output:(?:\n| )([\s\S]*)"
-        thoughts = re.search(pattern_thoughts, output)
-        if thoughts:
-            thoughts = thoughts.group(1).strip()
-        else:
-            thoughts = None
-        output = re.search(pattern_output, output).group(1).strip()
-        return {"output": output, "thoughts": thoughts}
-    elif style == "classification":
-        # extract int from output
-        thoughts = None # temporarily set to None
-        output = int(re.search(r"\d+", output).group())
-        return {"output": output, "thoughts": thoughts}
-    elif style == "regression":
-        # extract float from output
-        thoughts = None # temporarily set to None
-        try:
-            output = float(re.search(r"\d+\.\d+", output).group())
-        except:
-            output = float(re.search(r"\d+", output).group())
-        return {"output": output, "thoughts": thoughts}
-    else:
-        raise ValueError(f"Invalid style: {style}")
     
     
 def encode_interleaved_data(
@@ -153,6 +125,34 @@ def encode_interleaved_data(
     
     data_dict.update({"input_ids": input_ids, "labels": labels})
     return data_dict
+
+
+def parse_chat_output(output: str, style: str = "base") -> Dict:
+    if style == "base":
+        pattern_thoughts = r"Thoughts:(?:\n| )([\s\S]*?)\n"
+        pattern_output = r"Output:(?:\n| )([\s\S]*)"
+        thoughts = re.search(pattern_thoughts, output)
+        if thoughts:
+            thoughts = thoughts.group(1).strip()
+        else:
+            thoughts = None
+        output = re.search(pattern_output, output).group(1).strip()
+        return {"output": output, "thoughts": thoughts}
+    elif style == "classification":
+        # extract int from output
+        thoughts = None # temporarily set to None
+        output = int(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
+    elif style == "regression":
+        # extract float from output
+        thoughts = None # temporarily set to None
+        try:
+            output = float(re.search(r"\d+\.\d+", output).group())
+        except:
+            output = float(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
+    else:
+        raise ValueError(f"Invalid style: {style}")
         
 
 @contextlib.contextmanager

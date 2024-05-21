@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="bioagent",
-    version="0.0.4",
+    version="0.0.5",
     description="",
     author="CiaoHe",
     license="Apache License 2.0",

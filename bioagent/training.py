@@ -46,7 +46,7 @@ These are weights for a version of `{base_model}` finetuned for multimodal appli
 
 ### Usage
 
-GitHub: https://github.com/sshh12/bioagent (includes training scripts and basic inference server)
+GitHub: https://github.com/open-mol/bioagent (includes training scripts and basic inference server)
 
 ### Dataset
 
@@ -224,6 +224,7 @@ def train_for_modalities(
     )
     fix_tokenizer(tokenizer)
 
+    data_module = make_supervised_data_module(tokenizer, training_args, modalities)
     data_module = make_supervised_data_module(tokenizer, training_args, modalities)
 
     model = model_cls.from_pretrained(

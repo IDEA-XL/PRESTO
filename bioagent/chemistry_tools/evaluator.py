@@ -7,11 +7,15 @@ import numpy as np
 import nltk
 from nltk import word_tokenize
 from nltk.translate.bleu_score import corpus_bleu, sentence_bleu
+import nltk
+from nltk import word_tokenize
+from nltk.translate.bleu_score import corpus_bleu, sentence_bleu
 from nltk.translate.meteor_score import meteor_score
 from rouge_score import rouge_scorer
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import MACCSkeys, AllChem
 import selfies as sf
+from sklearn.metrics import accuracy_score, f1_score, mean_squared_error, mean_absolute_error, r2_score
 from sklearn.metrics import accuracy_score, f1_score, mean_squared_error, mean_absolute_error, r2_score
 
 RDLogger.DisableLog('rdApp.*')
@@ -58,30 +62,23 @@ class Evaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         pass
 
 
 class ClassificationEvaluator(Evaluator):
     _metric_functions = {
         "accuracy": accuracy_score,
-        "f1_score": f1_score
+        "f1_macro": partial(f1_score, average='macro'),
+        "f1_micro": partial(f1_score, average='micro'),
     }
 
     def build_evaluate_tuple(self, pred, gt):
-        if isinstance(pred, str):
-            pred = int(pred)
-        elif isinstance(pred, List) and isinstance(pred[0], str):
-            pred = int(pred[0])
-        if isinstance(gt, str):
-            gt = int(gt)
-        elif isinstance(gt, List) and isinstance(gt[0], str):
-            gt = int(gt[0])
-        return [pred], [gt]
+        return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
-            metrics = ["accuracy", "f1_score"]
+            metrics = ["accuracy", "f1_macro", "f1_micro"]
 
         results = {metric: [] for metric in metrics}
 
@@ -95,7 +92,10 @@ class ClassificationEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
 
 
 class RegressionEvaluator(Evaluator):
@@ -106,17 +106,9 @@ class RegressionEvaluator(Evaluator):
     }
 
     def build_evaluate_tuple(self, pred, gt):
-        if isinstance(pred, str):
-            pred = float(pred)
-        elif isinstance(pred, List) and isinstance(pred[0], str):
-            pred = float(pred[0])
-        if isinstance(gt, str):
-            gt = float(gt)
-        elif isinstance(gt, List) and isinstance(gt[0], str):
-            gt = float(gt[0])
-        return [pred], [gt]
+        return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
             metrics = ["mse", "mae", "r2"]
 
@@ -131,22 +123,25 @@ class RegressionEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
 
 
 class MoleculeSMILESEvaluator(Evaluator):
     _metric_functions = {
-        "levenshtein": lev,
         "exact_match": exact_match,
         "bleu": corpus_bleu,
-        "validity": lambda smiles: smiles is not None,
+        "levenshtein": lev,
+        "rdk_sims": rdk_similarity,
         "maccs_sims": maccs_similarity,
         "morgan_sims": morgan_similarity,
-        "rdk_sims": rdk_similarity
+        "validity": lambda smiles: smiles is not None,
     }
 
     @staticmethod
-    def sf_encode(selfies):
+    def sf_decode(selfies):
         try:
             smiles = sf.decoder(selfies)
             return smiles
@@ -164,19 +159,16 @@ class MoleculeSMILESEvaluator(Evaluator):
         else:
             return None
 
-    def build_evaluate_tuple(self, pred, gt, decode_selfies):
+    def build_evaluate_tuple(self, pred, gt, decode_selfies=False):
         if decode_selfies:
-            pred_smi = self.sf_encode(pred)
-            gt_smi = self.sf_encode(gt)
-        else:
-            pred_smi = pred
-            gt_smi = gt
-        return self.convert_to_canonical_smiles(pred_smi), self.convert_to_canonical_smiles(gt_smi)
+            pred = self.sf_decode(pred)
+            gt = self.sf_decode(gt)
+        return self.convert_to_canonical_smiles(pred), self.convert_to_canonical_smiles(gt)
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, decode_selfies=False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, decode_selfies: bool = False, full_results: bool = False):
             
         if metrics is None:
-            metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
+            metrics = ["exact_match", "bleu", "levenshtein", "rdk_sims", "maccs_sims", "morgan_sims", "validity"]
 
         results = {metric: [] for metric in metrics}
         if "bleu" in metrics:
@@ -212,10 +204,13 @@ class MoleculeSMILESEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
 
 
-class MoleculeSEELFIESEvaluator(Evaluator):
+class MoleculeSELFIESEvaluator(Evaluator):
     """
     If input is SMILES, convert to SELFIES then evaluate. Ensure `encode_smiles`=True
     """
@@ -230,7 +225,7 @@ class MoleculeSEELFIESEvaluator(Evaluator):
     }
 
     @staticmethod
-    def sf2smi(selfies):
+    def sf_decode(selfies):
         try:
             smiles = sf.decoder(selfies)
             return smiles
@@ -238,7 +233,7 @@ class MoleculeSEELFIESEvaluator(Evaluator):
             return None
     
     @staticmethod
-    def smi2sf(smiles):
+    def sf_encode(smiles):
         try:
             selfies = sf.encoder(smiles)
             return selfies
@@ -256,20 +251,17 @@ class MoleculeSEELFIESEvaluator(Evaluator):
         else:
             return None
 
-    def build_evaluate_tuple(self, pred, gt, encode_smiles):
+    def build_evaluate_tuple(self, pred, gt, encode_smiles=False):
         if encode_smiles:
-            pred_smi = self.convert_to_canonical_smiles(pred)
-            gt_smi = self.convert_to_canonical_smiles(gt)
-            pred_sf = self.smi2sf(pred_smi)
-            gt_sf = self.smi2sf(gt_smi)
+            pred = self.convert_to_canonical_smiles(pred)
+            gt = self.convert_to_canonical_smiles(gt)
+            pred_sf = self.sf_encode(pred)
+            gt_sf = self.sf_encode(gt)
         else:
-            pred_sf = pred
-            gt_sf = gt
-            pred_smi = pred
-            gt_smi = gt
-        return pred_sf, gt_sf, pred_smi, gt_smi
+            pred_sf, gt_sf = pred, gt
+        return pred_sf, gt_sf, pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, encode_smiles=True):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, encode_smiles: bool = False, full_results: bool = False):
             
         if metrics is None:
             metrics = ["levenshtein", "exact_match", "bleu", "validity", "maccs_sims", "morgan_sims", "rdk_sims"]
@@ -308,20 +300,30 @@ class MoleculeSEELFIESEvaluator(Evaluator):
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}
+
 
 class MoleculeCaptionEvaluator(Evaluator):
     _metric_functions = {
         "bleu-2": partial(sentence_bleu, weights=(0.5, 0.5)),
         "bleu-4": partial(sentence_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
+        "bleu-2": partial(sentence_bleu, weights=(0.5, 0.5)),
+        "bleu-4": partial(sentence_bleu, weights=(0.25, 0.25, 0.25, 0.25)),
         "meteor": meteor_score,
     }
+
+    def __init__(self):
+        self.rouge_scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 
     def build_evaluate_tuple(self, pred, gt):
         return pred, gt
 
-    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False):
+    def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
+            metrics = ["bleu-2", "bleu-4", "meteor", "rouge-1", "rouge-2", "rouge-L"]
             metrics = ["bleu-2", "bleu-4", "meteor", "rouge-1", "rouge-2", "rouge-L"]
 
         results = {metric: [] for metric in metrics}
@@ -341,10 +343,24 @@ class MoleculeCaptionEvaluator(Evaluator):
                     results[metric].append(score)
                 else:
                     raise ValueError(f"Unsupported metric: {metric}")
+                if metric in ["bleu-2", "bleu-4"]:
+                    results[metric].append(self._metric_functions[metric]([gt], pred))
+                elif metric == "meteor":
+                    results[metric].append(self._metric_functions[metric]([word_tokenize(gt)], word_tokenize(pred)))
+                elif metric.startswith("rouge"):
+                    scores = self.rouge_scorer.score(gt, pred)
+                    rouge_variant = metric.split("-")[-1]
+                    score = scores['rouge' + rouge_variant].fmeasure
+                    results[metric].append(score)
+                else:
+                    raise ValueError(f"Unsupported metric: {metric}")
 
         if verbose:
             print("Evaluation results:")
             for metric, values in results.items():
                 print(f"{metric}: {np.mean(values)}")
 
-        return results
+        if full_results:
+            return results
+        else:
+            return {metric: np.mean(values) for metric, values in results.items()}

@@ -1,6 +1,6 @@
 from bioagent.chemistry_tools.evaluator import (
     MoleculeSMILESEvaluator, 
-    MoleculeSEELFIESEvaluator,
+    MoleculeSELFIESEvaluator,
     MoleculeCaptionEvaluator,
     ClassificationEvaluator,
     RegressionEvaluator,
@@ -10,7 +10,7 @@ from bioagent.chemistry_tools.smiles import smiles_to_graph, graph_to_smiles, sm
 
 EVALUATOR_BUILDERS = {
     "smiles": MoleculeSMILESEvaluator,
-    "selfies": MoleculeSEELFIESEvaluator,
+    "selfies": MoleculeSELFIESEvaluator,
     "caption": MoleculeCaptionEvaluator,
     "classification": ClassificationEvaluator,
     "regression": RegressionEvaluator,
