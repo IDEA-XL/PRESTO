@@ -56,6 +56,7 @@ def conversation_train(id, instruction, input, output, format = "smiles", token=
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
+        "ground_truth": str(output),
         "messages": [
             {
                 "role": ROLE_SYSTEM,
@@ -78,7 +79,7 @@ def conversation_test(id, instruction, input, output, few_shots: list = None, fo
         part = process_reaction_equation(part, format, token)
         selfies.extend(part[0])
         smiles.extend(part[1])
-        molecules.extend(part[2])
+        molecules.append(part[2])
     molecules = ">>".join(molecules)
     instruction = instruction + "\n" + molecules
     system_prompt = SYSTEM_PROMPT.replace("<REP_1>", format.upper())
@@ -114,7 +115,7 @@ def generate_few_shot_examples(rows, num_examples=5):
 
 def main(args):
     dataset = load_dataset(args.data_dir)
-    
+       
     def gen(split):
         for id, item in enumerate(dataset[split]):
             try:
@@ -129,18 +130,6 @@ def main(args):
                 print(f"invalid example: {e}, id: {id}")
                 continue
 
-    # Create dataset info dictionary
-    dataset_info = {
-        "description": "Forward synthesis dataset for SMolInstruct",
-        "version": "1.0.0",
-        "license": "Apache-2.0",
-        "splits": {
-            "train": {"num_examples": len(dataset["train"])},
-            "dev": {"num_examples": len(dataset["validation"])},
-            "test": {"num_examples": len(dataset["test"])}
-        }
-    }
-
     dataset_dict = {}
     for split in ["train", "validation", "test"]:
         dataset_split = Dataset.from_generator(gen, gen_kwargs={"split": split}, num_proc=args.num_proc)
@@ -149,19 +138,21 @@ def main(args):
         dataset_dict[split] = dataset_split
         print(f"{split} size: {len(dataset_dict[split])}\n{split} example: {dataset_dict[split][0]}")
 
-    dataset_info["features"] = dataset_dict["test"].features
-
-    dataset_dict = DatasetDict(dataset_dict, info=dataset_info)
-    dataset_dict.save_to_disk(args.out_dir)
+    dataset_dict = DatasetDict(dataset_dict)
+    dataset_dict.push_to_hub(args.repo_id, private=args.private)
+    if args.output_dir:
+        dataset_dict.save_to_disk(args.output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
-    parser.add_argument("--out_dir", type=str, required=True)
-    parser.add_argument("--num_proc", type=int, default=16)
+    parser.add_argument("--num_proc", type=int, default=1)
     parser.add_argument("--token", type=bool, default=True)
     parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
+    parser.add_argument("--repo_id", type=str, required=True, help="Repository ID on the Hugging Face Hub")
+    parser.add_argument("--output_dir", type=str, default=None, help="Output directory to save the dataset")
+    parser.add_argument("--private", action="store_true", help="Set to make the dataset private on the Hugging Face Hub")
     args = parser.parse_args()
     main(args)
 
-# python molecule_build_reaction_classification_uspto.py --data_dir OpenMol/USPTO_1k_TPL-SFT --out_dir /home/ys792/data/mol-llama/SMolInst-Reactions/uspto_tpl_mmchat_smiles
+

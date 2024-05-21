@@ -33,7 +33,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Can you give the molecular molecular formula of <INPUT> ?",
-        "output": "Sure. <OUTPUT>"
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please write the molecular formula of the molecule <INPUT> .",
@@ -41,15 +41,15 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Given the representation <INPUT>, what would be its molecular formula?",
-        "output": "It is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "The representation <INPUT> represents a specific molecule. Can you reveal its molecular formula?",
-        "output": "Sure. It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Considering the code <INPUT>, can you determine the corresponding molecular formula?",
-        "output": "It would be <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Can you tell me the molecular formula of <INPUT> ?",
@@ -57,7 +57,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "I'd like to know the molecular formula of <INPUT> . Can you tell me?",
-        "output": "Sure. It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "What is the molecular formula for the molecule denoted by <INPUT> ?",
@@ -65,7 +65,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "What is the molecular formula of <INPUT> ?",
-        "output": "The molecular formula is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please provide the molecular formula for <INPUT> .",
@@ -96,6 +96,7 @@ def conversation_train(id, input, output, format = "smiles", token=True):
     return {
         "id": id,
         "molecules": {"selfies": selfies, "smiles": smiles},
+        "ground_truth": output,
         "messages": [
             {
                 "role": ROLE_SYSTEM,
@@ -171,35 +172,25 @@ def main(args):
             except Exception as e:
                 pass
 
-    # Create dataset info dictionary
-    dataset_info = {
-        "description": "SMolInstruct dataset for molecule name conversion from SMILES to IUPAC name",
-        "version": "1.0.0",
-        "license": "Apache-2.0",
-        "splits": {
-            "train": {"num_examples": len(dataset["train"])},
-            "dev": {"num_examples": len(dataset["dev"])},
-            "test": {"num_examples": len(dataset["test"])}
-        }
-    }
-
     dataset_dict = {}
     for split in ["train", "dev", "test"]:
         dataset_split = Dataset.from_generator(gen, gen_kwargs={"split": split}, num_proc=args.num_proc)
         dataset_dict[split] = dataset_split
         print(f"{split} size: {len(dataset_dict[split])}\n{split} example: {dataset_dict[split][0]}")
 
-    dataset_info["features"] = dataset_dict["test"].features
-
-    dataset_dict = DatasetDict(dataset_dict, info=dataset_info)
-    dataset_dict.save_to_disk(args.out_dir)
+    dataset_dict = DatasetDict(dataset_dict)
+    dataset_dict.push_to_hub(args.repo_id, private=args.private)
+    if args.output_dir:
+        dataset_dict.save_to_disk(args.output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
-    parser.add_argument("--out_dir", type=str, required=True)
     parser.add_argument("--num_proc", type=int, default=1)
     parser.add_argument("--token", type=bool, default=True)
     parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
+    parser.add_argument("--repo_id", type=str, required=True, help="Repository ID on the Hugging Face Hub")
+    parser.add_argument("--output_dir", type=str, default=None, help="Output directory to save the dataset")
+    parser.add_argument("--private", action="store_true", help="Set to make the dataset private on the Hugging Face Hub")
     args = parser.parse_args()
     main(args)

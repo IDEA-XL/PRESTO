@@ -33,7 +33,7 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Can you give the SMILES notation of the molecule <INPUT> ?",
-        "output": "Sure. <OUTPUT>"
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please write the SMILES representation of the molecule <INPUT> .",
@@ -45,27 +45,27 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "The IUPAC name of a certain molecule is <INPUT> . Can you provide its SMILES representation?",
-        "output": "The SMILES representation is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Please identify the SMILES representation of the molecule named <INPUT> .",
-        "output": "The molecule's SMILES representation is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "For the molecule with <INPUT> as the IUPAC name, what is the corresponding SMILES representation?",
-        "output": "The corresponding SMILES representation is <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "What is the SMILES notation for <INPUT> ?",
-        "output": "It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Could you provide the SMILES for <INPUT> ?",
-        "output": "Of course. It's <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "Can you tell me the SMILES representation for the molecule <INPUT> ?",
-        "output": "Sure. <OUTPUT> ."
+        "output": "<OUTPUT>"
     },
     {
         "input": "What is the SMILES representation for <INPUT> ?",
