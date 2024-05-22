@@ -82,6 +82,7 @@ class LlamaLMMForCausalLM(LlamaForCausalLM, LMMMetaForCausalLM):
             past_key_values,
             inputs_embeds,
             labels,
+            projected_tensors,
         ) = self.prepare_inputs_labels_for_multimodal(
             input_ids, attention_mask, past_key_values, labels, **kwargs
         )
@@ -115,6 +116,10 @@ class LlamaLMMForCausalLM(LlamaForCausalLM, LMMMetaForCausalLM):
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
+            # @open-mol: add tricky pseudo project tensor loss ('0') here  
+            # to avoid deepspeed all_reduce() hanging issue
+            if projected_tensors is not None:
+                loss = loss + projected_tensors.mean() * 0
 
         if not return_dict:
             output = (logits,) + outputs[1:]
