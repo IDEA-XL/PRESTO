@@ -96,8 +96,8 @@ class ClassificationEvaluator(Evaluator):
 
 class RegressionEvaluator(Evaluator):
     _metric_functions = {
-        "mse": mean_squared_error,
         "mae": mean_absolute_error,
+        "mse": mean_squared_error,
         "r2": r2_score
     }
 
@@ -106,7 +106,7 @@ class RegressionEvaluator(Evaluator):
 
     def evaluate(self, predictions, references, metrics: List[str] = None, verbose: bool = False, full_results: bool = False):
         if metrics is None:
-            metrics = ["mse", "mae", "r2"]
+            metrics = ["mae", "mse", "r2"]
 
         results = {metric: [] for metric in metrics}
         gt, pred = self.build_evaluate_tuple(predictions, references) 
