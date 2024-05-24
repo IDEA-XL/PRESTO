@@ -13,7 +13,8 @@ NUM_CHIRALITY_TAG = 3
 NUM_BOND_TYPE = 6       # including aromatic and self-loop edge, and extra masked tokens
 NUM_BOND_DIRECTION = 3
 
-BOND_TYPE = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2, BondType.AROMATIC: 3}
+# WARN: we just set all UNSPECIFIED bond as SINGLE bond
+BOND_TYPE = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2, BondType.AROMATIC: 3, BondType.UNSPECIFIED:0}
 BOND_DIR = {BondDir.NONE: 0, BondDir.ENDUPRIGHT: 1, BondDir.ENDDOWNRIGHT: 2}
 CHI = {ChiralType.CHI_UNSPECIFIED: 0, ChiralType.CHI_TETRAHEDRAL_CW: 1, ChiralType.CHI_TETRAHEDRAL_CCW: 2, ChiralType.CHI_OTHER: 3}
 
@@ -104,12 +105,42 @@ def smiles_to_coords(smiles, filter_h_only=True, max_attempts=1000, random_seed=
 
     return atoms, coordinates
 
-def convert_to_canonical_smiles(smiles):
+
+def convert_to_canonical_smiles(smiles, isomeric=False, kekulization=False):
     if not smiles:
         return None
     molecule = Chem.MolFromSmiles(smiles)
     if molecule is not None:
-        canonical_smiles = Chem.MolToSmiles(molecule, isomericSmiles=False, canonical=True)
+        canonical_smiles = Chem.MolToSmiles(molecule, isomericSmiles=isomeric, canonical=True, kekuleSmiles=kekulization)
         return canonical_smiles
     else:
         return None
+    
+
+def convert_multiple_smiles_to_canonical(smiles, isomeric=False, kekulization=False, allow_empty_part=False, sort_things=True):
+    """
+    Args:
+        smiles: str, SMILES string
+        isomeric: bool, whether to include isomeric information
+        kekulization: bool, whether to kekulize the SMILES
+        allow_empty_part: bool, whether to allow empty part in the SMILES
+        sort_things: bool, whether to sort the SMILES parts
+    Returns:
+        str, canonical SMILES; None if the input SMILES is invalid
+    """
+    things = smiles.split('.')
+    new_things = []
+    for thing in things:
+        try:
+            if thing == '' and not allow_empty_part:
+                raise ValueError('SMILES contains empty part.')
+            mol = Chem.MolFromSmiles(thing)
+            assert mol is not None, 'Molecule is None.'
+            new_thing = Chem.MolToSmiles(mol, isomericSmiles=isomeric, canonical=True, kekuleSmiles=kekulization)
+            assert new_thing is not None, f"cannot convert {thing} to canonical smiles"
+        except:
+            return None
+        new_things.append(new_thing)
+    if sort_things:
+        things = sorted(new_things)
+    return '.'.join(new_things)

@@ -12,7 +12,7 @@ import transformers
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import Trainer, TrainerCallback
 
-from bioagent.dataset import (
+from bioagent.data import (
     make_supervised_data_module,
 )
 from bioagent.model_utils import (
@@ -89,6 +89,9 @@ class TrainingArguments(transformers.TrainingArguments):
     data_mixture: str = field(
         default=None, metadata={"help": "Datasets mixture to use."}
     )
+    eval_path: Optional[str] = field(
+        default=None, metadata={"help": "Path to the evaluation data."}
+    )
     model_max_length: int = field(
         default=512,
         metadata={
@@ -124,6 +127,7 @@ class ModelArguments:
     model_cls: str = field(default="MistralLMMForCausalLM")
     modality_builder: str = field(default="vision_clip")
     model_lora_path: Optional[str] = field(default=None)
+    projectors_path: Optional[str] = field(default=None)
 
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
@@ -221,6 +225,7 @@ def train_for_modalities(
     fix_tokenizer(tokenizer)
 
     data_module = make_supervised_data_module(tokenizer, training_args, modalities)
+    data_module = make_supervised_data_module(tokenizer, training_args, modalities)
 
     model = model_cls.from_pretrained(
         model_args.model_name_or_path,
@@ -284,7 +289,7 @@ def train_for_modalities(
         dataset = data_module["train_dataset"]
         readme_text = README_TEMPLATE.format(
             base_model=model_args.model_name_or_path,
-            dataset=training_args.data_mixture,
+            dataset=training_args.data_mixture or training_args.dataset_name,
             dataset_example=repr(dataset.get_example()),
             num_examples=len(dataset),
             modalities="\n".join(modalities_text),

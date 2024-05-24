@@ -3,6 +3,10 @@ import os
 import argparse
 import random
 import pandas as pd
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+from typing import List
+=======
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
 
 import selfies as sf
 import tiktoken
@@ -34,6 +38,17 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Given the following product, please provide possible reactants. <INPUT>",
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+        "output": "Possible reactant(s): <OUTPUT> ."
+    },
+    {
+        "input": "Do retrosynthesis with the product <INPUT> .",
+        "output": "OK. The reactants may be <OUTPUT> ."
+    },
+    {
+        "input": "<INPUT> Given the product provided, propose some possible reactants that could have been employed in its formation.",
+        "output": "Here are possible reactants: <OUTPUT> ."
+=======
         "output": "<OUTPUT>"
     },
     {
@@ -43,6 +58,7 @@ PROMPT_TEMPLATES = [
     {
         "input": "<INPUT> Given the product provided, propose some possible reactants that could have been employed in its formation.",
         "output": "<OUTPUT>"
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
     },
     {
         "input": "To synthesis <INPUT>, what are the possible reactants? Write in the SMILES representation.",
@@ -50,7 +66,11 @@ PROMPT_TEMPLATES = [
     },
     {
         "input": "Provide the potential reactants that may be used to produce the product <INPUT> .",
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+        "output": "The potential reactants: <OUTPUT> ."
+=======
         "output": "<OUTPUT>"
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
     },
     {
         "input": "What reactants could lead to the production of the following product? <INPUT>",
@@ -78,6 +98,25 @@ PROMPT_TEMPLATES = [
     }
 ]
 
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+def process_reaction_equation(reaction, format = "smiles", token=True)->List[str]:
+    smiles_list = multicomponent_smiles_to_list(reaction)
+    smiles_list = [convert_to_canonical_smiles(smi) for smi in smiles_list]
+    selfies_list = [sf.encoder(smi) for smi in smiles_list]
+    if token:
+        molecules = ".".join([MOLECULE_TOKEN for _ in range(len(smiles_list))])
+    elif format == "smiles":
+        molecules = ".".join(smiles_list)
+    elif format == "selfies":
+        molecules = ".".join(selfies_list)
+    else:
+        raise ValueError(f"Unsupported molecule format: {format}")
+    
+    return selfies_list, smiles_list, molecules
+
+def conversation_train(id, input, output, format = "smiles", token=True):
+    selfies_list, smiles_list, molecules = process_reaction_equation(input, format, token)
+=======
 def process_reaction_equation(reaction, format = "smiles", token=True):
     smiles = multicomponent_smiles_to_list(reaction)
     smiles = [convert_to_canonical_smiles(smi) for smi in smiles]
@@ -95,6 +134,7 @@ def process_reaction_equation(reaction, format = "smiles", token=True):
 
 def conversation_train(id, input, output, format = "smiles", token=True):
     selfies, smiles, molecules = process_reaction_equation(input, format, token)
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
     _, _, output = process_reaction_equation(output, format, False)
     prompt_template = random.choice(PROMPT_TEMPLATES)
     input_template = prompt_template["input"].replace("<INPUT>", molecules)
@@ -103,8 +143,12 @@ def conversation_train(id, input, output, format = "smiles", token=True):
     
     return {
         "id": id,
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+        "molecules": {"selfies": selfies_list, "smiles": smiles_list},
+=======
         "molecules": {"selfies": selfies, "smiles": smiles},
         "ground_truth": output,
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
         "messages": [
             {
                 "role": ROLE_SYSTEM,
@@ -142,7 +186,11 @@ def conversation_test(id, input, output, few_shots: list = None, format = "smile
         "messages": [
             {
                 "role": ROLE_SYSTEM,
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+                "content": system_prompt
+=======
                 "content": system_prompt 
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
             },
             {
                 "role": ROLE_USER,
@@ -157,8 +205,14 @@ def generate_few_shot_examples(rows, num_examples=5):
     return random.sample(sorted(rows, key=lambda x: random.random()), num_examples)
 
 def main(args):
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+    SUFFIX = "_complementary" # "" for original SMol dataset, "_complementary": not overlapped with MolIns
+    data_files = {
+        "train": os.path.join(args.data_dir, f"train/retrosynthesis{SUFFIX}.jsonl"),
+=======
     data_files = {
         "train": os.path.join(args.data_dir, "train/retrosynthesis.jsonl"),
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
         "dev": os.path.join(args.data_dir, "dev/retrosynthesis.jsonl"),
         "test": os.path.join(args.data_dir, "test/retrosynthesis.jsonl")
     }
@@ -175,24 +229,60 @@ def main(args):
             elif split == "dev":
                 result = conversation_train(id, item['input'], item['output'], format=args.format, token=args.token)
             elif split == "test":
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+                result = conversation_test(id, item['input'], item['output'], generate_few_shot_examples(dataset[split], num_examples=args.few_shot), format=args.format, token=args.token)
+            yield result
+
+    # Create dataset info dictionary
+    dataset_info = {
+        "description": "Retrosynthesis dataset for SMolInstruct",
+        "version": "1.0.0",
+        "license": "Apache-2.0",
+        "splits": {
+            "train": {"num_examples": len(dataset["train"])},
+            "dev": {"num_examples": len(dataset["dev"])},
+            "test": {"num_examples": len(dataset["test"])}
+        }
+    }
+
+=======
                 result = conversation_test(id, item['input'], item['output'], generate_few_shot_examples(dataset[split], num_examples=0), format=args.format, token=args.token)
             yield result
 
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
     dataset_dict = {}
     for split in ["train", "dev", "test"]:
         dataset_split = Dataset.from_generator(gen, gen_kwargs={"split": split}, num_proc=args.num_proc)
         dataset_dict[split] = dataset_split
         print(f"{split} size: {len(dataset_dict[split])}\n{split} example: {dataset_dict[split][0]}")
 
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+    dataset_info["features"] = dataset_dict["test"].features
+
+    dataset_dict = DatasetDict(dataset_dict, info=dataset_info)
+    dataset_dict.save_to_disk(args.out_dir)
+=======
 
     dataset_dict = DatasetDict(dataset_dict)
     dataset_dict.push_to_hub(args.repo_id, private=args.private)
     if args.output_dir:
         dataset_dict.save_to_disk(args.output_dir)
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
+<<<<<<< HEAD:scripts/build_dataset/retrosynthesis/molecule_build_retrosynthesis_smol.py
+    parser.add_argument("--out_dir", type=str, required=True)
+    parser.add_argument("--num_proc", type=int, default=1)
+    parser.add_argument("--token", type=bool, default=True)
+    parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
+    parser.add_argument("--few_shot", type=int, default=0, help="Number of few-shot examples, set to 0 to disable fs-test")
+    args = parser.parse_args()
+    main(args)
+
+# python molecule_build_retrosynthesis_smol.py --data_dir /cto_labs/AIDD/DATA/SMolInstruct/raw/ --out_dir /cto_labs/AIDD/DATA/React/SMolInstruct/retro_mmchat_smiles --num_proc 4
+=======
     parser.add_argument("--num_proc", type=int, default=1)
     parser.add_argument("--token", type=bool, default=True)
     parser.add_argument("--format", type=str, default="smiles", choices=["smiles", "selfies"])
@@ -201,3 +291,4 @@ if __name__ == "__main__":
     parser.add_argument("--private", action="store_true", help="Set to make the dataset private on the Hugging Face Hub")
     args = parser.parse_args()
     main(args)
+>>>>>>> main:scripts/retrosynthesis/molecule_build_retrosynthesis_smol.py

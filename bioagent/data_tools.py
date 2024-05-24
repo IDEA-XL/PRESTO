@@ -30,6 +30,7 @@ def encode_chat(
     chat_as_string = tokenizer.apply_chat_template(messages, tokenize=False)
 
     token_to_modality = {m.token: m for m in modalities}
+    modality_token_counts = Counter()
     modality_instance_counts = Counter()
     instruct_pattern = r"(\[INST\][\s\S]*?\[\/INST\])"
     pattern = "(" + "|".join(re.escape(m.token) for m in modalities) + ")"
@@ -54,10 +55,10 @@ def encode_chat(
                 assert (
                     is_instruction
                 ), "There should be no modality tokens outside of instructions"
-                # WARN: token width should be flexible, before we assume 1
                 m = token_to_modality[subpart]
                 m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
                 modality_instance_counts[m.name] += 1
+                modality_token_counts[m.name] += m_token_width
                 input_ids.extend([m.token_idx] * m_token_width)
                 labels.extend([IGNORE_INDEX] * m_token_width)
             elif is_instruction:
@@ -74,7 +75,8 @@ def encode_chat(
     
     data_dict.update({"input_ids": input_ids, "labels": labels})
     return data_dict
-
+    
+    
 def encode_interleaved_data(
     item: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
@@ -86,11 +88,18 @@ def encode_interleaved_data(
     labels = []
     data_dict = dict()
     modality_instance_counts = Counter()
+    modality_token_counts = Counter()
     
     for m in modalities:
         # ensure the item has key like "smiles" or "selfies"
         data_dict[m.name] = m.preprocess_rows([item])[0]
-    
+        
+    # convert the multi-turns "messages" into a single string
+    if "messages" in item and "text" not in item:
+        text_str = ""
+        for turn in item["messages"]:
+            text_str += turn["content"]
+        item["text"] = text_str
     for subpart in re.split(pattern, item["text"]):
         if not subpart:
             continue
@@ -98,13 +107,19 @@ def encode_interleaved_data(
             m = token_to_modality[subpart]
             m_token_width = data_dict[m.name][modality_instance_counts[m.name]][0].shape[0]
             modality_instance_counts[m.name] += 1
+            modality_token_counts[m.name] += m_token_width
             input_ids.extend([m.token_idx] * m_token_width)
             labels.extend([IGNORE_INDEX] * m_token_width)
         else:
             part_ids = tokenizer(subpart, add_special_tokens=False).input_ids
             input_ids.extend(part_ids)
             labels.extend(part_ids)
-
+    
+    # for m in modalities:
+    #     assert modality_instance_counts[m.name] == len(data_dict[m.name]), f"Expected {len(data_dict[m.name])} instances for {m.name}, got {modality_instance_counts[m.name]}"
+    #     m_token_total = sum(data_dict[m.name][i][0].shape[0] for i in range(len(data_dict[m.name])))
+    #     assert modality_token_counts[m.name] == m_token_total, f"Expected {m_token_total} tokens for {m.name}, got {modality_token_counts[m.name]}"
+    
     input_ids = torch.tensor(input_ids, dtype=torch.long)
     labels = torch.tensor(labels, dtype=torch.long)
     
@@ -123,9 +138,22 @@ def parse_chat_output(output: str, style: str = "base") -> Dict:
             thoughts = None
         output = re.search(pattern_output, output).group(1).strip()
         return {"output": output, "thoughts": thoughts}
+    elif style == "classification":
+        # extract int from output
+        thoughts = None # temporarily set to None
+        output = int(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
+    elif style == "regression":
+        # extract float from output
+        thoughts = None # temporarily set to None
+        try:
+            output = float(re.search(r"\d+\.\d+", output).group())
+        except:
+            output = float(re.search(r"\d+", output).group())
+        return {"output": output, "thoughts": thoughts}
     else:
         raise ValueError(f"Invalid style: {style}")
-
+        
 
 @contextlib.contextmanager
 def with_local_files(fn_or_urls: List[Any]):

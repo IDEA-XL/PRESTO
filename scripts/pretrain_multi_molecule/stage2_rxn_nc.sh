@@ -6,10 +6,9 @@ export MOLECULE_2D_PATH="checkpoints/MoleculeSTM/"
 MODEL_VERSION=vicuna-7b-v1.5
 BASE_LLM_PATH=checkpoints/$MODEL_VERSION
 MODEL_CLS=LlamaLMMForCausalLM
-# data path
-DATA_DIR="/cto_labs/AIDD/DATA/React/USPTO/Interleaved"
 # output path
-OUTPUT_DIR="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-pretrain"
+PRETRAIN_VERSION="pretrain_rxn_nc"
+OUTPUT_DIR="checkpoints/stage2/llava-moleculestm-$MODEL_VERSION-$PRETRAIN_VERSION"
 # load stage-1 projector
 PROJECTOR_DIR="checkpoints/stage1/llava-moleculestm-$MODEL_VERSION-stage1/lmm_projector.bin"
 
@@ -18,8 +17,7 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --model_name_or_path $BASE_LLM_PATH \
     --model_cls $MODEL_CLS \
     --modality_builder molecule_2d \
-    --dataset_path $DATA_DIR \
-    --data_mixture "uspto_rxn_interleaved" \
+    --data_mixture "pretrain_v2" \
     --output_dir $OUTPUT_DIR \
     --pretrained_projectors_path $PROJECTOR_DIR \
     --lora_enable False \
@@ -39,7 +37,7 @@ deepspeed --num_gpus=$NUM_GPUS scripts/train_model.py \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
-    --dataloader_num_workers 0 \
+    --dataloader_num_workers 2 \
     --logging_steps 1 \
     --report_to none \
     --deepspeed configs/zero2.json
