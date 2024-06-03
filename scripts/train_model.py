@@ -32,4 +32,4 @@ if __name__ == "__main__":
     modalities = MODALITY_BUILDERS[model_args.modality_builder]()
     model_cls = LANGUAGE_MODEL_NAME_TO_CLASS[model_args.model_cls]
 
-    train_for_modalities(model_cls, training_args, model_args, data_args, modalities)
+    train_for_modalities(model_cls, training_args, model_args, modalities)

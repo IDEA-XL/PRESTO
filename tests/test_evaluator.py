@@ -40,10 +40,10 @@ def test_caption_evaluator(predictions, references, bleu_2, bleu_4, meteor, roug
     assert np.isclose(score["rouge-L"][0], rouge_l), f"Expected {rouge_l}, but got {score['rouge-L'][0]} for rougeL"
 
 
-@pytest.mark.parametrize("predictions, references, exact_match, validity, selfies", MOLECULE_EVALUATOR_TEST_CASES)
-def test_molecule_smiles_evaluator(predictions, references, exact_match, validity, selfies):
+@pytest.mark.parametrize("predictions, references, exact_match, validity, decode_selfies", MOLECULE_EVALUATOR_TEST_CASES)
+def test_molecule_smiles_evaluator(predictions, references, exact_match, validity, decode_selfies):
     evaluator = MoleculeSMILESEvaluator()
-    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True, selfies=selfies, full_results=True)
+    score = evaluator.evaluate(predictions, references, metrics=["exact_match", "validity", "bleu"], verbose=True, decode_selfies=decode_selfies, full_results=True)
     assert score["exact_match"][0] == exact_match, f"Expected {exact_match}, but got {score['exact_match'][0]} for exact match"
     assert score["validity"][0] == validity, f"Expected {validity}, but got {score['validity'][0]} for validity"
 

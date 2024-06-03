@@ -9,8 +9,8 @@ import torch
 import tqdm
 
 from bioagent.training import ModelArguments
-from bioagent.inference import load_trained_lora_model
-from bioagent.data_tools import encode_chat, parse_chat_output
+from bioagent.inference import load_trained_lora_model, load_trained_model
+from bioagent.data_tools import encode_chat, parse_chat_output, encode_interleaved_data
 from bioagent.chemistry_tools import EVALUATOR_BUILDERS
 
 
@@ -19,6 +19,7 @@ class EvaluationArguments(ModelArguments):
     dataset_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
     )
+    lora_enable: bool = field(default=True, metadata={"help": "Enable LoRA."})
     max_new_tokens: int = field(default=2048, metadata={"help": "Maximum number of new tokens to generate."})
     temperature: float = field(default=0.2, metadata={"help": "Temperature to use for sampling."})
     top_k: int = field(default=50, metadata={"help": "Top k to use for sampling."})
@@ -29,10 +30,12 @@ class EvaluationArguments(ModelArguments):
     evaluator: str = field(default='smiles', metadata={"help": "Evaluator to use for the generated output."})
     cache_dir: str = field(default=None, metadata={"help": "Path to the cache directory."})
     output_dir: str = field(default=None, metadata={"help": "Path to the output file."})
+    is_icl: bool = field(default=False, metadata={"help": "Whether ICL testing is enabled."})
     verbose: bool = field(default=False, metadata={"help": "Print verbose output."})
 
 
 def _save_rows(rows: list, cache_dir: str, file_name: str = "rows.txt"):
+    rows = [str(row) for row in rows]
     os.makedirs(cache_dir, exist_ok=True)
     if file_name.endswith(".txt"):
         with open(os.path.join(cache_dir, file_name), "w") as file:
@@ -51,9 +54,12 @@ def _save_score(score: dict, output_dir: str):
 
 def _resolve_dataset(path: str) -> HFDataset:
     if os.path.exists(path):
-        return load_from_disk(path)
+        try:
+            return load_from_disk(path)
+        except:
+            return load_dataset(path, split="test")
     else:
-        return load_dataset(path, split="train", data_files="*.arrow")
+        return load_dataset(path, split="test", data_files="*.arrow")
 
 
 def _evaluate(model, tokenizer, dataset, args):
@@ -64,7 +70,10 @@ def _evaluate(model, tokenizer, dataset, args):
     dataset = tqdm.tqdm(dataset, desc="Evaluating", total=len(dataset))
     for entry in dataset:
         ground_truth = entry['ground_truth']
-        encoded_dict = encode_chat(entry, tokenizer, model.modalities)
+        if args.is_icl:
+            encoded_dict = encode_interleaved_data(entry, tokenizer, model.modalities)
+        else:
+            encoded_dict = encode_chat(entry, tokenizer, model.modalities)
 
         with torch.inference_mode():
             output_ids = model.generate(
@@ -86,6 +95,7 @@ def _evaluate(model, tokenizer, dataset, args):
         ).strip() 
 
         if args.parser:
+
             try:
                 generated_output = parse_chat_output(generated_output, args.parser)["output"]
             except:
@@ -94,7 +104,7 @@ def _evaluate(model, tokenizer, dataset, args):
         if args.verbose:
             print(f"Ground Truth: {ground_truth}")
             print(f"Generated Output: {generated_output}")
-            print(f"Score: {evaluator.evaluate([generated_output], [ground_truth])}")
+            # print(f"Score: {evaluator.evaluate([generated_output], [ground_truth])}")
 
         predictions.append(generated_output)
         references.append(ground_truth)
@@ -111,14 +121,23 @@ if __name__ == "__main__":
 
     parser = transformers.HfArgumentParser((EvaluationArguments,))
     eval_args, _ = parser.parse_args_into_dataclasses(return_remaining_strings=True)
-
-    model, tokenizer = load_trained_lora_model(
-        model_name_or_path=eval_args.model_name_or_path,
-        model_lora_path=eval_args.model_lora_path,
-        load_bits=eval_args.load_bits,
-    )
-
+    
+    # Load the dataset
     dataset = _resolve_dataset(eval_args.dataset_path) 
+
+    if eval_args.lora_enable:
+        model, tokenizer = load_trained_lora_model(
+            model_name_or_path=eval_args.model_name_or_path,
+            model_lora_path=eval_args.model_lora_path,
+            load_bits=eval_args.load_bits,
+        )
+    else:
+        model, tokenizer = load_trained_model(
+            model_name_or_path=eval_args.model_name_or_path,
+            pretrained_projectors_path=eval_args.projectors_path,
+            load_bits=eval_args.load_bits,
+        )
+    
     score = _evaluate(model, tokenizer, dataset, eval_args)
 
     if eval_args.output_dir:
