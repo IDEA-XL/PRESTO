@@ -10,9 +10,9 @@
 # Define the commands for each task
 case ${SLURM_ARRAY_TASK_ID} in
     1)
-        python scaffold.py --fs --num_proc 20 > scaffold_fs.txt 2> scaffold_error_fs.txt
+        python scaffold_split_test.py --fs --num_proc 20 > scaffold_fs.txt 2> scaffold_error_fs.txt
         ;;
     2)
-        python scaffold.py --rs --num_proc 20 > scaffold_rs.txt 2> scaffold_error_rs.txt
+        python scaffold_split_test.py --rs --num_proc 20 > scaffold_rs.txt 2> scaffold_error_rs.txt
         ;;
 esac
