@@ -5,11 +5,11 @@ from flask import Flask, request, jsonify
 import transformers
 import torch
 
-from bioagent.training import (
+from presto.training import (
     ModelArguments,
 )
-from bioagent.inference import load_trained_lora_model
-from bioagent.data_tools import encode_chat
+from presto.inference import load_trained_lora_model
+from presto.data_tools import encode_chat
 
 
 @dataclass

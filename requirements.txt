@@ -16,3 +16,4 @@ nltk
 Levenshtein
 rouge-score
 pytest
+flask

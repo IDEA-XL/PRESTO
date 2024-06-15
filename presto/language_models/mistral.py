@@ -14,7 +14,7 @@ from transformers import (
 
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from bioagent.language_models.base_model import (
+from presto.language_models.base_model import (
     LMMMetaModel,
     LMMMetaForCausalLM,
 )

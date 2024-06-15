@@ -26,9 +26,9 @@ from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import  ConcatDataset, Subset
 from datasets import load_from_disk, load_dataset, Dataset as HFDataset
 
-from bioagent.modalities.base_modality import Modality
-from bioagent.constants import IGNORE_INDEX
-from bioagent.data_tools import encode_chat, encode_interleaved_data
+from presto.modalities.base_modality import Modality
+from presto.constants import IGNORE_INDEX
+from presto.data_tools import encode_chat, encode_interleaved_data
 
 _DATASETS = {}
 _MIXTURES = {}

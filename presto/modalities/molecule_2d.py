@@ -9,9 +9,9 @@ import torch.nn.functional as F
 from torch.utils._pytree import tree_map
 from torch_geometric.nn import (MessagePassing, global_mean_pool, global_add_pool, global_max_pool)
 
-from bioagent.chemistry_tools import smiles_to_graph
-from bioagent.modalities.base_modality import Modality
-from bioagent.modalities.projectors import build_mlp_vector_projector
+from presto.chemistry_tools import smiles_to_graph
+from presto.modalities.base_modality import Modality
+from presto.modalities.projectors import build_mlp_vector_projector
 
 MOLECULE_2D_PATH = os.environ.get("MOLECULE_2D_PATH", "")
 

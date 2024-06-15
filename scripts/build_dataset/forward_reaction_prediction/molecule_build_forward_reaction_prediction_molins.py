@@ -6,12 +6,11 @@ import pandas as pd
 from typing import List
 
 import selfies as sf
-import tiktoken
 from datasets import load_dataset, DatasetDict, Dataset
 
-from bioagent.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
-from bioagent.chemistry_tools.reaction import multicomponent_smiles_to_list, list_to_multicomponent_smiles
-from bioagent.chemistry_tools.smiles import convert_to_canonical_smiles
+from presto.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
+from presto.chemistry_tools.reaction import multicomponent_smiles_to_list, list_to_multicomponent_smiles
+from presto.chemistry_tools.smiles import convert_to_canonical_smiles
 
 MOLECULE_TOKEN = "<molecule_2d>"
 
@@ -157,7 +156,6 @@ def generate_few_shot_examples(rows, num_examples=5):
     return random.sample(sorted(rows, key=lambda x: random.random()), num_examples)
 
 def main(args):
-    tokenizer = tiktoken.get_encoding("cl100k_base")
     data_files = {
         "train": os.path.join(args.data_dir, f"forward_reaction_prediction_train.json"),
         "test": os.path.join(args.data_dir, "forward_reaction_prediction_test.json"),

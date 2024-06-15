@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
 
 
 setup(
-    name="bioagent",
+    name="presto",
     version="0.0.5",
     description="",
     author="CiaoHe",

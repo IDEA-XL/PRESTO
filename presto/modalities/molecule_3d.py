@@ -17,8 +17,8 @@ from unicore import utils
 from unicore.modules import LayerNorm, TransformerEncoderLayer, init_bert_params
 from unicore.data import Dictionary
 
-from bioagent.modalities.base_modality import Modality
-from bioagent.modalities.projectors import build_mlp_vector_projector
+from presto.modalities.base_modality import Modality
+from presto.modalities.projectors import build_mlp_vector_projector
 
 MOLECULE_3D_PATH = os.environ.get("MOLECULE_3D_PATH", "")
 

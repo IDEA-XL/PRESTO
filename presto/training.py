@@ -12,10 +12,10 @@ import transformers
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import Trainer, TrainerCallback
 
-from bioagent.data import (
+from presto.data import (
     make_supervised_data_module,
 )
-from bioagent.model_utils import (
+from presto.model_utils import (
     make_model_lora,
     get_peft_state,
     get_peft_state_non_lora,
@@ -24,7 +24,7 @@ from bioagent.model_utils import (
     get_peft_state_non_lora,
     get_mm_adapter_state,
 )
-from bioagent.modalities.base_modality import Modality
+from presto.modalities.base_modality import Modality
 
 
 README_TEMPLATE = """
@@ -46,7 +46,7 @@ These are weights for a version of `{base_model}` finetuned for multimodal appli
 
 ### Usage
 
-GitHub: https://github.com/open-mol/bioagent (includes training scripts and basic inference server)
+GitHub: https://github.com/open-mol/presto (includes training scripts and basic inference server)
 
 ### Dataset
 

@@ -7,10 +7,10 @@ from peft import PeftModel
 import torch
 import os
 
-from bioagent.model_utils import fix_tokenizer
-from bioagent.modalities.base_modality import Modality
-from bioagent.language_models import LANGUAGE_MODEL_NAME_TO_CLASS
-from bioagent.modalities import MODALITY_BUILDERS
+from presto.model_utils import fix_tokenizer
+from presto.modalities.base_modality import Modality
+from presto.language_models import LANGUAGE_MODEL_NAME_TO_CLASS
+from presto.modalities import MODALITY_BUILDERS
 
 
 def load_trained_lora_model(

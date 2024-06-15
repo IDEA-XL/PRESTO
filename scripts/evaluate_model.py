@@ -8,10 +8,10 @@ import transformers
 import torch
 import tqdm
 
-from bioagent.training import ModelArguments
-from bioagent.inference import load_trained_lora_model, load_trained_model
-from bioagent.data_tools import encode_chat, parse_chat_output, encode_interleaved_data
-from bioagent.chemistry_tools import EVALUATOR_BUILDERS
+from presto.training import ModelArguments
+from presto.inference import load_trained_lora_model, load_trained_model
+from presto.data_tools import encode_chat, parse_chat_output, encode_interleaved_data
+from presto.chemistry_tools import EVALUATOR_BUILDERS
 
 
 @dataclass

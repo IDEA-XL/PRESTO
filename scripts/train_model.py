@@ -3,20 +3,20 @@
 # Make it more memory efficient by monkey patching the LLaMA model with FlashAttn.
 
 # Need to call this before importing transformers.
-from bioagent.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+from presto.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 replace_llama_attn_with_flash_attn()
 
 import transformers
 import logging
 
-from bioagent.training import (
+from presto.training import (
     TrainingArguments,
     ModelArguments,
     train_for_modalities,
 )
-from bioagent.data import DataArguments
-from bioagent.language_models import LANGUAGE_MODEL_NAME_TO_CLASS
-from bioagent.modalities import MODALITY_BUILDERS
+from presto.data import DataArguments
+from presto.language_models import LANGUAGE_MODEL_NAME_TO_CLASS
+from presto.modalities import MODALITY_BUILDERS
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)

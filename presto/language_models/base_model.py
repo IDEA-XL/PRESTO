@@ -5,7 +5,7 @@ from torch.nn.functional import conv1d
 import torch
 import logging
 
-from bioagent.modalities.base_modality import Modality
+from presto.modalities.base_modality import Modality
 
 class LMMMetaModel:
     def __init__(self, config):

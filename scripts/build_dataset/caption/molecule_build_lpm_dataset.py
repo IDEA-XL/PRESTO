@@ -9,8 +9,8 @@ from datasets import Dataset, load_dataset, DatasetDict
 from rdkit import Chem
 import selfies as sf
 
-from bioagent.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
-from bioagent.chemistry_tools.smiles import convert_to_canonical_smiles
+from presto.constants import ROLE_ASSISTANT, ROLE_USER, ROLE_SYSTEM
+from presto.chemistry_tools.smiles import convert_to_canonical_smiles
 
 MOLECULE_TOKEN = "<molecule_2d>"
 

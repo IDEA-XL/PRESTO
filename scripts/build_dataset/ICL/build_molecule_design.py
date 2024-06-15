@@ -21,7 +21,7 @@ RDLogger.DisableLog('rdApp.*')
 import csv
 import difflib
 
-from bioagent.constants import ROLE_USER, ROLE_SYSTEM
+from presto.constants import ROLE_USER, ROLE_SYSTEM
 
 MOLECULE_TOKEN = "<molecule_2d>"
 

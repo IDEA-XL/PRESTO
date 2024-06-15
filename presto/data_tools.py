@@ -18,8 +18,8 @@ import numpy as np
 from datasets import load_dataset, Dataset
 from PIL import Image
 
-from bioagent.constants import IGNORE_INDEX
-from bioagent.modalities.base_modality import Modality
+from presto.constants import IGNORE_INDEX
+from presto.modalities.base_modality import Modality
 
 def encode_chat(
     item: Dict,
