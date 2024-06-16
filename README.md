@@ -66,7 +66,7 @@ For Stage 3 finetuning, we include finetuning scripts for various downstream tas
 - `stage3_skip_stage12.sh`: Skipping Stage 1 and Stage 2 and train with the full model on Stage 3 downstream tasks.
 - `stage3.sh`: Train with the full model on Stage 3 directly.
 
-T`o run a specific Stage 3 finetuning configuration, execute the corresponding script. For example:
+To run a specific Stage 3 finetuning configuration, execute the corresponding script. For example:
 ```bash
 bash scripts/sft/sft_lora/stage3_rxn_nc.sh
 ```
