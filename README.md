@@ -28,15 +28,6 @@ To perform Stage 1 pretraining for molecule-text alignment, run the following co
 bash scripts/pretrain_multi_molecule/stage1.sh
 ```
 
-## Pretraining
-
-### Stage 1: Molecule-Text Alignment
-
-To perform Stage 1 pretraining for molecule-text alignment, run the following command:
-```bash
-bash scripts/pretrain_multi_molecule/stage1.sh
-```
-
 This script will pretrain the model using the PubChem caption dataset and save the pretrained model checkpoints.
 
 ### Stage 2: Domain Incremental Pretraining
