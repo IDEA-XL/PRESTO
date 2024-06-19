@@ -1,8 +1,17 @@
 # PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes
 
-PRESTO (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework that focuses on pretraining and finetuning large language models (LLMs) for various tasks in synthetic chemistry.
+PRESTO [[Paper](https://arxiv.org/pdf/2311.16208.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework that focuses on pretraining and finetuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![PRESTO](assets/teaser.png)
+
+## Release
+- [2024/6/19] 🔥 We first release our code (including training and evaluation scripts).
+
+[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
+[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
+
+**Usage and License Notices**: The data, code and checkpoint is intended and licensed for research use only. They are also restricted to uses that follow the license agreement of LLaMA, Vicuna, LLaVA, Mol-Instructions. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
+
 
 ## Installation
 
@@ -45,7 +54,7 @@ To run a specific Stage 2 pretraining configuration, execute the corresponding s
 bash scripts/pretrain_multi_molecule/stage2_rxn_nc.sh
 ```
 
-## Stage 3 Downstream Tasks
+## SFT (Stage 3) Downstream Tasks
 
 For Stage 3 finetuning, we include finetuning scripts for various downstream tasks. Each task has its own directory under `scripts/build_dataset/` to build the dataset and `scripts/sft/` to run the finetuning. There are several configurations available:
 
@@ -59,103 +68,105 @@ For Stage 3 finetuning, we include finetuning scripts for various downstream tas
 
 To run a specific Stage 3 finetuning configuration, execute the corresponding script. For example:
 ```bash
-bash scripts/sft/sft_lora/stage3_rxn_nc.sh
+bash scripts/sft/sft_lora/stage3_rxn_nc.sh $EPOCH $MODEL_VERSION
+# $EPOCH: the epoch number to finetune the model (e.g., 3)
+# $MODEL_VERSION: the model version to finetune (e.g., SFT-ALL)
 ```
 
 ## Evaluation
 
 Here is a list of all the downstream tasks and the corresponding commands to run the evaluation:
 
-## Reaction Prediction
-### Forward Prediction
+### Reaction Prediction
+#### Forward Prediction
 
 To evaluate the forward reaction prediction task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_forward_reaction_prediction.sh
+bash scripts/evaluate/sft_lora/evaluate_forward_reaction_prediction.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_forward_reaction_prediction.sh
+bash scripts/evaluate/sft_full/evaluate_forward_reaction_prediction.sh $EPOCH $MODEL_VERSION
 ```
 
-### Retrosynthesis Prediction
+#### Retrosynthesis Prediction
 
 To evaluate the retrosynthesis prediction task, use the following command:
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_retrosynthesis.sh
+bash scripts/evaluate/sft_lora/evaluate_retrosynthesis.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_retrosynthesis.sh
+bash scripts/evaluate/sft_full/evaluate_retrosynthesis.sh $EPOCH $MODEL_VERSION
 ```
 
-## Reaction Condition Prediction
-### Reagent Prediction
+### Reaction Condition Prediction
+#### Reagent Prediction
 To evaluate the reagent prediction task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_reagent_prediction.sh
+bash scripts/evaluate/sft_lora/evaluate_reagent_prediction.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_reagent_prediction.sh
+bash scripts/evaluate/sft_full/evaluate_reagent_prediction.sh $EPOCH $MODEL_VERSION
 ```
 
-### Catalyst Prediction
+#### Catalyst Prediction
 To evaluate the catalyst prediction task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_catalyst_prediction.sh
+bash scripts/evaluate/sft_lora/evaluate_catalyst_prediction.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_catalyst_prediction.sh
+bash scripts/evaluate/sft_full/evaluate_catalyst_prediction.sh $EPOCH $MODEL_VERSION
 ```
 
-### Solvent Prediction
+#### Solvent Prediction
 To evaluate the solvent prediction task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_solvent_prediction.sh
+bash scripts/evaluate/sft_lora/evaluate_solvent_prediction.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_solvent_prediction.sh
+bash scripts/evaluate/sft_full/evaluate_solvent_prediction.sh $EPOCH $MODEL_VERSION
 ```
 
-## Reaction Condition Recommendation  
-### Reagent Selection
+### Reaction Condition Recommendation  
+#### Reagent Selection
 To evaluate the reagent selection task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_reagent_selection.sh
+bash scripts/evaluate/sft_lora/evaluate_reagent_selection.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_reagent_selection.sh
+bash scripts/evaluate/sft_full/evaluate_reagent_selection.sh $EPOCH $MODEL_VERSION
 ```
 
-## Reaction Type Classification
+### Reaction Type Classification
 To evaluate the reaction type classification task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_reaction_classification.sh
+bash scripts/evaluate/sft_lora/evaluate_reaction_classification.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_reaction_classification.sh
+bash scripts/evaluate/sft_full/evaluate_reaction_classification.sh $EPOCH $MODEL_VERSION
 ```
 
-## Yield Prediction
+### Yield Prediction
 To evaluate the yield prediction task, use the following commands:
 
 ```bash
 # For lora model
-bash scripts/evaluate/sft_lora/evaluate_yields_regression.sh
+bash scripts/evaluate/sft_lora/evaluate_yields_regression.sh $EPOCH $MODEL_VERSION
 
 # For full model
-bash scripts/evaluate/sft_full/evaluate_yields_regression.sh
+bash scripts/evaluate/sft_full/evaluate_yields_regression.sh $EPOCH $MODEL_VERSION
 ```
 
 ## Model Serving
@@ -171,6 +182,8 @@ This will start a Flask server that exposes a `/generate` endpoint for generatin
 ## Dataset Preparation
 
 The `scripts/build_dataset` directory contains scripts for preparing datasets for different tasks. Follow the instructions within each task-specific directory to prepare the datasets.
+
+- NOTE: Huggingface Dataset under preparation. Once the dataset is ready, we will sync the readme.
 
 
 ## License
@@ -188,3 +201,17 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 - We also thank the researchers and developers whose ideas and implementations have inspired and guided this project.
 
 For more details and advanced usage, please refer to the documentation and source code.
+
+
+<!-- ## Citation
+If you find InstructMol useful for your your research and applications, please cite using this BibTeX:
+```bibtex
+@misc{cao2023instructmol,
+      title={InstructMol: Multi-Modal Integration for Building a Versatile and Reliable Molecular Assistant in Drug Discovery}, 
+      author={He Cao and Zijing Liu and Xingyu Lu and Yuan Yao and Yu Li},
+      year={2023},
+      eprint={2311.16208},
+      archivePrefix={arXiv},
+      primaryClass={q-bio.BM}
+}
+``` -->
