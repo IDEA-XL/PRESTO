@@ -1,6 +1,6 @@
 # PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes
 
-PRESTO [[Paper](https://arxiv.org/pdf/2311.16208.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework that focuses on pretraining and finetuning large language models (LLMs) for various tasks in synthetic chemistry.
+PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework that focuses on pretraining and finetuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![PRESTO](assets/teaser.png)
 
@@ -203,15 +203,15 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 For more details and advanced usage, please refer to the documentation and source code.
 
 
-<!-- ## Citation
+## Citation
 If you find InstructMol useful for your your research and applications, please cite using this BibTeX:
 ```bibtex
-@misc{cao2023instructmol,
-      title={InstructMol: Multi-Modal Integration for Building a Versatile and Reliable Molecular Assistant in Drug Discovery}, 
-      author={He Cao and Zijing Liu and Xingyu Lu and Yuan Yao and Yu Li},
-      year={2023},
-      eprint={2311.16208},
-      archivePrefix={arXiv},
-      primaryClass={q-bio.BM}
+@misc{cao2024presto,
+    title={PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes},
+    author={He Cao and Yanjun Shao and Zhiyuan Liu and Zijing Liu and Xiangru Tang and Yuan Yao and Yu Li},
+    year={2024},
+    eprint={2406.13193},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
 }
-``` -->
+```
