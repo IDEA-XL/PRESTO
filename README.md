@@ -204,7 +204,7 @@ For more details and advanced usage, please refer to the documentation and sourc
 
 
 ## Citation
-If you find InstructMol useful for your your research and applications, please cite using this BibTeX:
+If you find PRESTO useful for your your research and applications, please cite using this BibTeX:
 ```bibtex
 @misc{cao2024presto,
     title={PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes},
