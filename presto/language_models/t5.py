@@ -98,12 +98,12 @@ class T5LMMForConditionalGeneration(T5ForConditionalGeneration, LMMMetaForCausal
             return_dict=return_dict,
         )
 
-        logits = self.lm_head(outputs[0]).float()
+        lm_logits = self.lm_head(outputs[0]).float()
 
         loss = None
         if labels is not None:
             # Shift so that tokens < n predict n
-            shift_logits = logits[..., :-1, :].contiguous()
+            shift_logits = lm_logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
