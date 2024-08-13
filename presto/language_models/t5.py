@@ -98,7 +98,7 @@ class T5LMMForConditionalGeneration(T5ForConditionalGeneration, LMMMetaForCausal
             return_dict=return_dict,
         )
 
-        lm_logits = self.lm_head(outputs[0])
+        logits = self.lm_head(outputs[0]).float()
 
         loss = None
         if labels is not None:
