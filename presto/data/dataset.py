@@ -106,38 +106,43 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 training_args: transformers.TrainingArguments,
                                 modalities: List[Modality],
                                 ) -> Dict:
-    if training_args.dataset_name is not None:
-        print(f"Using dataset: {training_args.dataset_name}")
-        assert training_args.dataset_name in _DATASETS, f"Dataset {training_args.dataset_name} not found in registry."
-        dataset = _DATASETS[training_args.dataset_name]
-        train_dataset = _resolve_dataset(dataset, split="train")
-        eval_dataset = _resolve_dataset(dataset, split="eval") if dataset.eval_path or dataset.repo_id else None
-    elif training_args.data_mixture is not None:
-        print(f"Using dataset mixture: {training_args.data_mixture}")
-        assert training_args.data_mixture in _MIXTURES, f"Dataset mixture {training_args.data_mixture} not found in registry."
-        mixture = _MIXTURES[training_args.data_mixture]
-        train_datasets = []
-        eval_datasets = []
-        for data_args, frac in mixture:
-            dataset_cls = _CLS_MAPPING[data_args.dataset_type]
-            train_dataset = dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train")
-            train_subset = Subset(train_dataset, range(int(len(train_dataset)*frac)))
-            train_datasets.append(train_subset)
-            if training_args.eval_path:
-                eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
-        train_dataset = LMMConcatDataset(train_datasets)
-        if training_args.eval_path:
-            eval_dataset = LMMConcatDataset(eval_datasets)
-        else:
-            eval_dataset = None
-    else:
-        raise ValueError("No dataset or dataset mixture specified.")
-    data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
-    print(f"Train dataset length: {len(train_dataset)}")
-    if eval_dataset is not None:
-        print(f"Eval dataset length: {len(eval_dataset)}")
-    return dict(train_dataset=train_dataset, eval_dataset=eval_dataset, data_collator=data_collator)
 
+    if training_args.training_mode == "sft":
+        if training_args.dataset_name is not None:
+            print(f"Using dataset: {training_args.dataset_name}")
+            assert training_args.dataset_name in _DATASETS, f"Dataset {training_args.dataset_name} not found in registry."
+            dataset = _DATASETS[training_args.dataset_name]
+            train_dataset = _resolve_dataset(dataset, split="train")
+            eval_dataset = _resolve_dataset(dataset, split="eval") if dataset.eval_path or dataset.repo_id else None
+        elif training_args.data_mixture is not None:
+            print(f"Using dataset mixture: {training_args.data_mixture}")
+            assert training_args.data_mixture in _MIXTURES, f"Dataset mixture {training_args.data_mixture} not found in registry."
+            mixture = _MIXTURES[training_args.data_mixture]
+            train_datasets = []
+            eval_datasets = []
+            for data_args, frac in mixture:
+                dataset_cls = _CLS_MAPPING[data_args.dataset_type]
+                train_dataset = dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="train")
+                train_subset = Subset(train_dataset, range(int(len(train_dataset)*frac)))
+                train_datasets.append(train_subset)
+                if training_args.eval_path:
+                    eval_datasets.append(dataset_cls(tokenizer=tokenizer, modalities=modalities, data_args=data_args, split="eval"))
+            train_dataset = LMMConcatDataset(train_datasets)
+            if training_args.eval_path:
+                eval_dataset = LMMConcatDataset(eval_datasets)
+            else:
+                eval_dataset = None
+        else:
+            raise ValueError("No dataset or dataset mixture specified.")
+        data_collator = DataCollatorForSupervisedLMMDataset(tokenizer=tokenizer, modalities=modalities)
+        print(f"Train dataset length: {len(train_dataset)}")
+        if eval_dataset is not None:
+            print(f"Eval dataset length: {len(eval_dataset)}")
+        return dict(train_dataset=train_dataset, eval_dataset=eval_dataset, data_collator=data_collator)
+    elif training_args.training_mode == "dpo":
+        raise NotImplementedError("DPO training mode not implemented.")
+    else:
+        raise ValueError(f"Unknown training mode: {training_args.training_mode}")
 
 class LMMDataset(TorchDataset):
     def __init__(
