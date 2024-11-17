@@ -210,24 +210,16 @@ For more details and advanced usage, please refer to the documentation and sourc
 If you find PRESTO useful for your research and applications, please cite using this BibTeX:
 ```bibtex
 @inproceedings{cao-etal-2024-presto,
-    title = "{PRESTO}: Progressive Pretraining Enhances Synthetic Chemistry Outcomes",
-    author = "Cao, He  and
-      Shao, Yanjun  and
-      Liu, Zhiyuan  and
-      Liu, Zijing  and
-      Tang, Xiangru  and
-      Yao, Yuan  and
-      Li, Yu",
-    editor = "Al-Onaizan, Yaser  and
-      Bansal, Mohit  and
-      Chen, Yun-Nung",
-    booktitle = "Findings of the Association for Computational Linguistics: EMNLP 2024",
-    month = nov,
-    year = "2024",
-    address = "Miami, Florida, USA",
-    publisher = "Association for Computational Linguistics",
-    url = "https://aclanthology.org/2024.findings-emnlp.597",
-    pages = "10197--10224",
+    title     = {{PRESTO}: Progressive Pretraining Enhances Synthetic Chemistry Outcomes},
+    author    = {Cao, He and Shao, Yanjun and Liu, Zhiyuan and Liu, Zijing and Tang, Xiangru and Yao, Yuan and Li, Yu},
+    editor    = {Al-Onaizan, Yaser and Bansal, Mohit and Chen, Yun-Nung},
+    booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2024},
+    month     = nov,
+    year      = {2024},
+    address   = {Miami, Florida, USA},
+    publisher = {Association for Computational Linguistics},
+    url       = {https://aclanthology.org/2024.findings-emnlp.597},
+    pages     = {10197--10224}
 }
 
 ```
