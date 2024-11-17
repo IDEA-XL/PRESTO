@@ -1,11 +1,14 @@
-# PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes
+# PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes (EMNLP 2024 Findings)
 
-PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework that focuses on pretraining and finetuning large language models (LLMs) for various tasks in synthetic chemistry.
+PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![PRESTO](assets/teaser.png)
+![Poster](assets/poster.pdf)
 
 ## Release
-- [2024/6/19] 🔥 We first release our code (including training and evaluation scripts).
+- [2024/11/14] 🏖️ Presented our paper at EMNLP 2024, Miami. [[Poster](assets/poster.pptx)]
+- [2024/09/20] 🔥 Paper accepted by EMNLP 2024.
+- [2024/06/19] 🔥 We first release our code (including training and evaluation scripts).
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
 [![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
@@ -204,14 +207,27 @@ For more details and advanced usage, please refer to the documentation and sourc
 
 
 ## Citation
-If you find PRESTO useful for your your research and applications, please cite using this BibTeX:
+If you find PRESTO useful for your research and applications, please cite using this BibTeX:
 ```bibtex
-@misc{cao2024presto,
-    title={PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes},
-    author={He Cao and Yanjun Shao and Zhiyuan Liu and Zijing Liu and Xiangru Tang and Yuan Yao and Yu Li},
-    year={2024},
-    eprint={2406.13193},
-    archivePrefix={arXiv},
-    primaryClass={cs.LG}
+@inproceedings{cao-etal-2024-presto,
+    title = "{PRESTO}: Progressive Pretraining Enhances Synthetic Chemistry Outcomes",
+    author = "Cao, He  and
+      Shao, Yanjun  and
+      Liu, Zhiyuan  and
+      Liu, Zijing  and
+      Tang, Xiangru  and
+      Yao, Yuan  and
+      Li, Yu",
+    editor = "Al-Onaizan, Yaser  and
+      Bansal, Mohit  and
+      Chen, Yun-Nung",
+    booktitle = "Findings of the Association for Computational Linguistics: EMNLP 2024",
+    month = nov,
+    year = "2024",
+    address = "Miami, Florida, USA",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.findings-emnlp.597",
+    pages = "10197--10224",
 }
+
 ```
