@@ -10,7 +10,7 @@
 [![GitHub Contributors](https://img.shields.io/github/contributors/IDEA-XL/PRESTO?style=flat-square&logo=github)](https://github.com/IDEA-XL/PRESTO/graphs/contributors)
 [![EMNLP Findings 2024](https://img.shields.io/badge/EMNLP%20Findings-2024-blue?style=flat-square&logo=researchgate)](https://aclanthology.org/2024.findings-emnlp.597/)
 
-PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
+**PRESTO** (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![Poster](assets/poster.png)
 
@@ -48,7 +48,7 @@ To perform Stage 1 pretraining for molecule-text alignment, run the following co
 bash scripts/pretrain_multi_molecule/stage1.sh
 ```
 
-This script will pretrain the model using the PubChem caption dataset and save the pretrained model checkpoints.
+This script will pre-train the model using the PubChem caption dataset and save the pretrained model checkpoints.
 
 ### Stage 2: Domain Incremental Pretraining
 
@@ -70,11 +70,11 @@ bash scripts/pretrain_multi_molecule/stage2_rxn_nc.sh
 For Stage 3 finetuning, we include finetuning scripts for various downstream tasks. Each task has its own directory under `scripts/build_dataset/` to build the dataset and `scripts/sft/` to run the finetuning. There are several configurations available:
 
 - `stage3_freezeLLM.sh`: Finetuning the projector with a frozen LLM on Stage 3 downstream tasks.
-- `stage3_lora.sh`: Finetuning the projector and apply LoRA to train the LLM on Stage 3 downstream tasks.
+- `stage3_lora.sh`: Finetuning the projector and applying LoRA to train the LLM on Stage 3 downstream tasks.
 - `stage3_rxn_nc.sh`: Finetuning the LLM (pretrained using `stage2_rxn_nc.sh`) on Stage 3 downstream tasks.
-- `stage3_skip_align_fulltune.sh`: Skipping Stage 1 and train with the full model on Stage 2 pretraining data and Stage 3 downstream tasks.
-- `stage3_skip_stage2.sh`: Skipping Stage 2 and train with the full model on Stage 1 pretraining data and Stage 3 downstream tasks.
-- `stage3_skip_stage12.sh`: Skipping Stage 1 and Stage 2 and train with the full model on Stage 3 downstream tasks.
+- `stage3_skip_align_fulltune.sh`: Skipping Stage 1 and training with the full model on Stage 2 pretraining data and Stage 3 downstream tasks.
+- `stage3_skip_stage2.sh`: Skipping Stage 2 and training with the full model on Stage 1 pretraining data and Stage 3 downstream tasks.
+- `stage3_skip_stage12.sh`: Skipping Stage 1 and 2 and training with the full model on Stage 3 downstream tasks.
 - `stage3.sh`: Train with the full model on Stage 3 directly.
 
 To run a specific Stage 3 finetuning configuration, execute the corresponding script. For example:
@@ -192,7 +192,7 @@ This will start a Flask server that exposes a `/generate` endpoint for generatin
 
 ## Dataset Preparation
 
-The `scripts/build_dataset` directory contains scripts for preparing datasets for different tasks. Follow the instructions within each task-specific directory to prepare the datasets.
+The `scripts/build_dataset` directory contains scripts for preparing datasets for different tasks. To prepare the datasets, follow the instructions within each task-specific directory.
 
 - NOTE: Huggingface Dataset under preparation. Once the dataset is ready, we will sync the readme.
 
@@ -203,11 +203,11 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 
 ## Acknowledgments
 
-- This project builds upon the work of various open-source libraries and frameworks. We would like to acknowledge their contributions.
-    - [multi_token](https://github.com/sshh12/multi_token): We mostly built upon this implementation to support multi-token molecules.
-    - [Hugging Face Transformers](https://github.com/huggingface/transformers)
-    - [LLaVA](https://github.com/haotian-liu/LLaVA)
-    - [VILA](https://github.com/Efficient-Large-Model/VILA)
+This project builds upon the work of various open-source libraries and frameworks, and we would like to acknowledge their contributions.
+- [multi_token](https://github.com/sshh12/multi_token): We mostly built upon this implementation to support multi-token molecules.
+- [Hugging Face Transformers](https://github.com/huggingface/transformers)
+- [LLaVA](https://github.com/haotian-liu/LLaVA)
+- [VILA](https://github.com/Efficient-Large-Model/VILA)
 
 - We also thank the researchers and developers whose ideas and implementations have inspired and guided this project.
 
