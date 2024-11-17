@@ -3,7 +3,7 @@
 PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![PRESTO](assets/teaser.png)
-![Poster](assets/poster.pdf)
+![Poster](assets/poster.png)
 
 ## Release
 - [2024/11/14] 🏖️ Presented our paper at EMNLP 2024, Miami. [[Poster](assets/poster.pptx)]
