@@ -1,10 +1,14 @@
 # PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes (EMNLP 2024 Findings)
 
-[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
-[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
-[![Paper Link](https://img.shields.io/badge/Paper-pink?style=plastic&logo=arXiv)](https://arxiv.org/abs/2406.13193)
-[![GitHub Link](https://img.shields.io/badge/GitHub-blue?style=plastic&logo=github)](https://github.com/IDEA-XL/PRESTO)
-[![Huggingface Link](https://img.shields.io/badge/Huggingface-orange?style=plastic&logo=huggingface)](https://huggingface.co/OpenMol)
+[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green?style=flat-square)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
+[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red?style=flat-square)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
+[![Paper Link](https://img.shields.io/badge/Paper-pink?style=flat-square&logo=arXiv)](https://arxiv.org/abs/2406.13193)
+[![GitHub Link](https://img.shields.io/badge/GitHub-blue?style=flat-square&logo=github)](https://github.com/IDEA-XL/PRESTO)
+[![Huggingface Link](https://img.shields.io/badge/Huggingface-orange?style=flat-square&logo=huggingface)](https://huggingface.co/OpenMol)
+[![GitHub Forks](https://img.shields.io/github/forks/IDEA-XL/PRESTO?style=flat-square&logo=github)](https://github.com/IDEA-XL/PRESTO/network/members)
+[![GitHub Stars](https://img.shields.io/github/stars/IDEA-XL/PRESTO?style=flat-square&logo=github)](https://github.com/IDEA-XL/PRESTO/stargazers)
+[![GitHub Contributors](https://img.shields.io/github/contributors/IDEA-XL/PRESTO?style=flat-square&logo=github)](https://github.com/IDEA-XL/PRESTO/graphs/contributors)
+[![EMNLP Findings 2024](https://img.shields.io/badge/EMNLP%20Findings-2024-blue?style=flat-square&logo=researchgate)](https://aclanthology.org/2024.findings-emnlp.597/)
 
 PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
 
