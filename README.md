@@ -1,5 +1,11 @@
 # PRESTO: Progressive Pretraining Enhances Synthetic Chemistry Outcomes (EMNLP 2024 Findings)
 
+[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
+[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
+[![Paper Link](https://img.shields.io/badge/Paper-pink?style=plastic&logo=arXiv)](https://arxiv.org/abs/2406.13193)
+[![GitHub Link](https://img.shields.io/badge/GitHub-blue?style=plastic&logo=github)](https://github.com/IDEA-XL/PRESTO)
+[![Huggingface Link](https://img.shields.io/badge/Huggingface-orange?style=plastic&logo=huggingface)](https://huggingface.co/OpenMol)
+
 PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining Enhances Synthetic Chemistry Outcomes) is a framework for pretraining and fine-tuning large language models (LLMs) for various tasks in synthetic chemistry.
 
 ![Poster](assets/poster.png)
@@ -9,8 +15,6 @@ PRESTO [[Paper](https://arxiv.org/abs/2406.13193.pdf)] (Progressive Pretraining 
 - [2024/09/20] 🔥 Paper accepted by EMNLP 2024.
 - [2024/06/19] 🔥 We first release our code (including training and evaluation scripts).
 
-[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
-[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/DATA_LICENSE)
 
 **Usage and License Notices**: The data, code and checkpoint is intended and licensed for research use only. They are also restricted to uses that follow the license agreement of LLaMA, Vicuna, LLaVA, Mol-Instructions. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
